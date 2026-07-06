@@ -7,383 +7,499 @@
 <script src="msal-browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0f1117;--surface:#1a1d27;--surface2:#232636;--border:#2e3248;--text:#e8eaf0;--muted:#7b82a0;--accent:#4f8ef7;--success:#2ecc71;--danger:#e74c3c;--warning:#f39c12;--purple:#9b59b6;--teal:#1abc9c;--radius:8px;--font:'Segoe UI',system-ui,sans-serif}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
-.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px}
-.loader-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+:root{--bg:#0f1117;--s1:#1a1d27;--s2:#232636;--bd:#2e3248;--tx:#e8eaf0;--mu:#7b82a0;--ac:#4f8ef7;--ok:#2ecc71;--er:#e74c3c;--wa:#f39c12;--pu:#9b59b6;--te:#1abc9c;--r:8px;--fn:'Segoe UI',system-ui,sans-serif}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh}
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:14px}
+.spin{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loader p{color:var(--muted);font-size:14px}
-.login-btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:var(--radius);cursor:pointer;font-size:14px;font-weight:500}
-#app{display:none;padding:16px}
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.topbar h1{font-size:16px;font-weight:500}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.user-badge{font-size:11px;color:var(--muted);background:var(--surface2);padding:4px 10px;border-radius:20px}
-.refresh-btn{background:var(--surface2);border:0.5px solid var(--border);color:var(--text);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px}
-.last-update{font-size:10px;color:var(--muted)}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.kpi{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px}
-.kpi-ico{font-size:18px;margin-bottom:6px}
-.kpi-val{font-size:22px;font-weight:500;line-height:1;margin-bottom:2px}
-.kpi-lbl{font-size:10px;color:var(--muted)}
-.kpi-sub{font-size:10px;margin-top:3px;color:var(--muted)}
-.tabs{display:flex;gap:2px;margin-bottom:12px;background:var(--surface);border-radius:var(--radius);padding:4px}
-.tab{padding:7px 16px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;border:none;background:none}
-.tab.active{background:var(--surface2);color:var(--text);font-weight:500}
+.loader p{color:var(--mu);font-size:13px}
+.status-msg{font-size:11px;color:var(--wa);margin-top:4px}
+#app{display:none;padding:14px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--bd);flex-wrap:wrap;gap:8px}
+.topbar h1{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.year-sel{font-size:11px;padding:5px 10px;border-radius:var(--r);background:var(--s2);color:var(--tx);border:0.5px solid var(--bd);font-weight:500;cursor:pointer}
+.user-badge{font-size:10px;color:var(--mu);background:var(--s2);padding:3px 8px;border-radius:16px}
+.notif-wrap{position:relative}
+.notif-btn{background:none;border:none;cursor:pointer;padding:4px;color:var(--mu);position:relative}
+.notif-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:var(--er)}
+.notif-panel{display:none;position:absolute;top:32px;right:0;width:290px;background:var(--s2);border:0.5px solid var(--bd);border-radius:10px;z-index:200}
+.notif-panel.open{display:block}
+.notif-hdr{padding:8px 12px;border-bottom:0.5px solid var(--bd);font-size:11px;font-weight:500;display:flex;justify-content:space-between}
+.notif-item{display:flex;align-items:flex-start;gap:7px;padding:8px 12px;border-bottom:0.5px solid var(--bd);cursor:pointer;transition:background .12s}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--s1)}
+.notif-ico{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
+.notif-body{flex:1;min-width:0}
+.notif-title{font-size:10px;font-weight:500;margin-bottom:1px}
+.notif-sub{font-size:9px;color:var(--mu)}
+.notif-time{font-size:9px;color:var(--mu);white-space:nowrap}
+.refresh-btn{font-size:10px;padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--bd);background:var(--s2);color:var(--mu);cursor:pointer}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.kpi{background:var(--s1);border-radius:var(--r);padding:10px 12px}
+.kpi-val{font-size:20px;font-weight:500;line-height:1;margin-bottom:2px}
+.kpi-lbl{font-size:10px;color:var(--mu)}
+.kpi-sub{font-size:9px;margin-top:2px;color:var(--mu)}
+.new-ocis{background:rgba(79,142,247,.08);border:0.5px solid rgba(79,142,247,.3);border-radius:var(--r);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.new-ocis-lbl{font-size:10px;font-weight:500;color:var(--ac);white-space:nowrap}
+.oci-chip{display:inline-flex;align-items:center;gap:5px;background:var(--s2);border:0.5px solid rgba(79,142,247,.4);border-radius:16px;padding:3px 8px;font-size:9px;cursor:pointer}
+.oci-chip:hover{background:rgba(79,142,247,.1)}
+.log-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:10px}
+.log-card{background:var(--s1);border-radius:var(--r);padding:8px 6px;text-align:center;border:0.5px solid var(--bd)}
+.log-val{font-size:16px;font-weight:500;margin-bottom:1px}
+.log-lbl{font-size:9px;color:var(--mu)}
+.log-bar{height:3px;border-radius:2px;margin-top:5px}
+.tabs{display:flex;gap:2px;margin-bottom:10px;background:var(--s1);border-radius:var(--r);padding:3px}
+.tab{padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;color:var(--mu);border:none;background:none;transition:all .15s}
+.tab.active{background:var(--s2);color:var(--tx);font-weight:500}
 .panel{display:none}.panel.active{display:block}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
-.card-title{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:10px}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.bar-lbl{font-size:11px;min-width:100px;color:var(--text)}
-.bar-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.card{background:var(--s1);border:0.5px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+.card-title{font-size:11px;font-weight:500;color:var(--mu);margin-bottom:8px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-lbl{font-size:10px;min-width:100px;color:var(--tx)}
+.bar-track{flex:1;height:5px;background:var(--s2);border-radius:3px;overflow:hidden}
 .bar-fill{height:100%;border-radius:3px}
-.bar-cnt{font-size:11px;min-width:20px;text-align:right;color:var(--muted)}
-.imp-row{border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:6px}
-.imp-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;background:var(--surface);transition:background .12s;user-select:none}
-.imp-hdr:hover{background:var(--surface2)}
-.imp-name{font-size:12px;font-weight:500;min-width:80px}
-.imp-meta{display:flex;gap:6px;flex:1;flex-wrap:wrap;align-items:center}
-.imp-body{display:none;border-top:0.5px solid var(--border)}
+.bar-cnt{font-size:10px;min-width:20px;text-align:right;color:var(--mu)}
+.sep{height:1px;background:var(--bd);margin:6px 0}
+.imp-row{border:0.5px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:5px}
+.imp-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;background:var(--s2);user-select:none;transition:background .12s}
+.imp-hdr:hover{background:var(--s1)}
+.imp-name{font-size:11px;font-weight:500;min-width:80px}
+.imp-meta{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center}
+.imp-body{display:none;border-top:0.5px solid var(--bd)}
 .imp-body.open{display:block}
-.imp-sub-table{width:100%;border-collapse:collapse;font-size:10px}
-.imp-sub-table th{padding:5px 10px;text-align:left;color:var(--muted);background:var(--surface2);font-weight:500;font-size:9px}
-.imp-sub-table td{padding:5px 10px;border-top:0.5px solid var(--border);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
-.imp-sub-table tr:hover td{background:var(--surface2)}
-.pill{display:inline-block;font-size:9px;padding:2px 6px;border-radius:5px;font-weight:500;white-space:nowrap}
+.oci-sec{border-top:0.5px solid var(--bd)}
+.oci-hdr{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 20px;cursor:pointer;background:var(--s1);user-select:none;transition:background .12s}
+.oci-hdr:hover{background:var(--s2)}
+.oci-name{font-size:10px;font-weight:500;color:var(--mu);font-family:monospace;min-width:80px}
+.oci-meta{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center;font-size:9px;color:var(--mu)}
+.oci-body{display:none;border-top:0.5px solid var(--bd)}
+.oci-body.open{display:block}
+.itbl{width:100%;border-collapse:collapse;font-size:9px}
+.itbl th{padding:4px 8px 4px 28px;text-align:left;color:var(--mu);background:var(--s2);font-weight:500}
+.itbl td{padding:4px 8px 4px 28px;border-top:0.5px solid var(--bd);color:var(--tx)}
+.itbl tr:hover td{background:var(--s1)}
+.pill{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:500;white-space:nowrap}
 .p-open{background:rgba(79,142,247,.15);color:#4f8ef7}
 .p-closed{background:rgba(46,204,113,.15);color:#2ecc71}
 .p-stock{background:rgba(243,156,18,.15);color:#f39c12}
 .p-proj{background:rgba(79,142,247,.15);color:#4f8ef7}
 .p-transit{background:rgba(26,188,156,.15);color:#1abc9c}
 .p-prod{background:rgba(155,89,182,.15);color:#9b59b6}
+.p-emb{background:rgba(79,142,247,.15);color:#185fa5}
+.p-rec{background:rgba(46,204,113,.2);color:#27500A}
 .p-pend{background:rgba(243,156,18,.15);color:#f39c12}
 .p-alert{background:rgba(231,76,60,.15);color:#e74c3c}
-.p-nodate{background:rgba(127,130,160,.15);color:#7b82a0}
-.chevron{color:var(--muted);font-size:12px}
-.count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--surface2);border:0.5px solid var(--border);font-size:10px;color:var(--muted);padding:0 5px}
-.prog-mini{flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;min-width:50px}
-.prog-mini-fill{height:100%;border-radius:2px}
-.tgl-group{display:flex;gap:4px;margin-bottom:12px}
-.tgl{font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;border:0.5px solid var(--border);background:var(--surface2);color:var(--muted)}
-.tgl.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.main-table{width:100%;border-collapse:collapse;font-size:10px}
-.main-table th{padding:6px 8px;text-align:left;color:var(--muted);border-bottom:0.5px solid var(--border);font-size:9px;white-space:nowrap;font-weight:500}
-.main-table td{padding:6px 8px;border-bottom:0.5px solid var(--border);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
-.main-table tr:last-child td{border-bottom:none}
-.main-table tr:hover td{background:var(--surface2)}
-.alert-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.p-new{background:rgba(26,188,156,.15);color:#085041}
+.chev{font-size:10px;color:var(--mu);display:inline-block;transition:transform .15s}
+.chev.open{transform:rotate(90deg)}
+.cbadge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:var(--s2);border:0.5px solid var(--bd);font-size:9px;color:var(--mu);padding:0 4px}
+.pmini{flex:1;height:3px;background:var(--s2);border-radius:2px;overflow:hidden;min-width:40px}
+.pmini-fill{height:100%;border-radius:2px}
+.tgl-grp{display:flex;gap:4px;margin-bottom:10px}
+.tgl{font-size:10px;padding:4px 10px;border-radius:var(--r);cursor:pointer;border:0.5px solid var(--bd);background:var(--s2);color:var(--mu)}
+.tgl.active{background:var(--ac);color:#fff;border-color:var(--ac)}
+.llegada-item{padding:7px 10px;border-radius:6px;margin-bottom:4px;cursor:pointer}
+.llegada-week{background:rgba(46,204,113,.08);border-left:3px solid #2ecc71;border-radius:0 6px 6px 0}
+.llegada-month{background:rgba(79,142,247,.08);border-left:3px solid #4f8ef7;border-radius:0 6px 6px 0}
+.llegada-row{display:flex;align-items:center;justify-content:space-between;font-size:10px}
+.llegada-sub{font-size:9px;color:var(--mu);margin-top:2px}
+.llegada-body{display:none;margin-top:4px;padding:6px 8px;background:var(--s2);border-radius:6px}
+.llegada-body.open{display:block}
+.alert-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--bd)}
 .alert-item:last-child{border-bottom:none}
-.alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.alert-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .alert-info{flex:1;min-width:0}
-.alert-id{font-size:10px;font-family:monospace;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.alert-reason{font-size:10px;color:var(--muted)}
-.alert-dias{font-size:10px;font-weight:500;white-space:nowrap}
-.llegada-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;margin-bottom:4px;font-size:10px}
-.llegada-week{background:rgba(46,204,113,.1);border-left:3px solid #2ecc71}
-.llegada-month{background:rgba(79,142,247,.1);border-left:3px solid #4f8ef7}
-.footer-row{display:flex;align-items:center;gap:10px;padding:10px 0 0;font-size:10px;color:var(--muted);border-top:0.5px solid var(--border);margin-top:8px}
-.prog-bar{flex:1;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden}
-.prog-fill{height:100%;border-radius:2px;background:var(--accent)}
-.sep{height:1px;background:var(--border);margin:10px 0}
-.arch-label{font-size:10px;color:var(--muted);padding:6px 0 4px;font-weight:500}
-.empty{font-size:11px;color:var(--muted);padding:12px 0;text-align:center}
-.status-msg{font-size:12px;color:var(--warning);margin-top:8px}
-@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}}
+.alert-id{font-size:10px;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-reason{font-size:9px;color:var(--mu)}
+.mtbl{width:100%;border-collapse:collapse;font-size:10px}
+.mtbl th{padding:5px 7px;text-align:left;color:var(--mu);border-bottom:0.5px solid var(--bd);font-size:9px;white-space:nowrap;font-weight:500}
+.mtbl td{padding:5px 7px;border-bottom:0.5px solid var(--bd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.mtbl tr:last-child td{border-bottom:none}
+.mtbl tr:hover td{background:var(--s2)}
+.frow{display:flex;align-items:center;gap:8px;padding:6px 0 0;font-size:10px;color:var(--mu);border-top:0.5px solid var(--bd);margin-top:6px}
+.pbar{flex:1;height:3px;background:var(--s2);border-radius:2px;overflow:hidden}
+.pfill{height:100%;border-radius:2px;background:var(--ac)}
+.empty{font-size:10px;color:var(--mu);padding:8px 0;text-align:center}
+.filt{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.filt select{font-size:10px;padding:3px 6px;border-radius:var(--r);background:var(--s2);color:var(--tx);border:0.5px solid var(--bd)}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.log-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
 <body>
 <div class="loader" id="loader">
-  <div style="font-size:20px;font-weight:500;color:#e8eaf0">Control de importaciones</div>
-  <div style="font-size:12px;color:#7b82a0">Interamsa</div>
-  <div class="loader-spinner"></div>
-  <p id="loader-msg">Iniciando sesión...</p>
-  <p id="status-detail" class="status-msg"></p>
+  <div style="font-size:18px;font-weight:500">Control de importaciones</div>
+  <div style="font-size:11px;color:var(--mu)">Interamsa</div>
+  <div class="spin"></div>
+  <p id="lmsg">Iniciando sesión...</p>
+  <p id="ldet" class="status-msg"></p>
 </div>
 <div id="app">
   <div class="topbar">
     <h1>📦 Control de importaciones</h1>
     <div class="topbar-right">
-      <span class="user-badge" id="user-name">—</span>
-      <span class="last-update" id="last-update">—</span>
+      <select class="year-sel" id="year-sel" onchange="applyYear()">
+        <option value="2026">2026</option>
+        <option value="2025">2025</option>
+        <option value="todos">Todos</option>
+      </select>
+      <span class="user-badge" id="uname">—</span>
+      <span style="font-size:10px;color:var(--mu)" id="lupd">—</span>
+      <div class="notif-wrap" id="nw">
+        <button class="notif-btn" onclick="toggleNotif()" aria-label="Notificaciones">
+          🔔
+          <span class="notif-dot" id="ndot"></span>
+        </button>
+        <div class="notif-panel" id="np">
+          <div class="notif-hdr"><span>Notificaciones</span></div>
+          <div id="notif-list"></div>
+        </div>
+      </div>
       <button class="refresh-btn" onclick="loadData()">↻ Actualizar</button>
     </div>
   </div>
+
   <div class="kpi-grid">
-    <div class="kpi"><div class="kpi-ico" style="color:var(--accent)">◉</div><div class="kpi-val" style="color:var(--accent)" id="k-open">—</div><div class="kpi-lbl">Líneas activas (O)</div><div class="kpi-sub" id="k-open-s">—</div></div>
-    <div class="kpi"><div class="kpi-ico" style="color:var(--success)">✓</div><div class="kpi-val" style="color:var(--success)" id="k-closed">—</div><div class="kpi-lbl">Líneas cerradas (C)</div><div class="kpi-sub" id="k-closed-s">—</div></div>
-    <div class="kpi"><div class="kpi-ico" style="color:var(--danger)">🔔</div><div class="kpi-val" style="color:var(--danger)" id="k-alert">—</div><div class="kpi-lbl">Alertas operativas</div><div class="kpi-sub" style="color:var(--danger)">sin comentario ni IMP</div></div>
-    <div class="kpi"><div class="kpi-ico" style="color:var(--muted)">📦</div><div class="kpi-val" id="k-imp">—</div><div class="kpi-lbl">IMPs activos</div><div class="kpi-sub" id="k-imp-s">—</div></div>
+    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--ac)">◉</div><div class="kpi-val" style="color:var(--ac)" id="k1">—</div><div class="kpi-lbl">Líneas activas (O)</div><div class="kpi-sub" id="k1s">—</div></div>
+    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--ok)">✓</div><div class="kpi-val" style="color:var(--ok)" id="k2">—</div><div class="kpi-lbl">Líneas cerradas (C)</div><div class="kpi-sub" id="k2s">—</div></div>
+    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--er)">🔔</div><div class="kpi-val" style="color:var(--er)" id="k3">—</div><div class="kpi-lbl">Alertas sin gestión</div><div class="kpi-sub" style="color:var(--er)">sin comentario ni IMP</div></div>
+    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--mu)">📦</div><div class="kpi-val" id="k4">—</div><div class="kpi-lbl">IMPs activos</div><div class="kpi-sub" id="k4s">—</div></div>
   </div>
+
+  <div class="new-ocis" id="new-ocis-bar"></div>
+
+  <div class="log-grid" id="log-grid"></div>
+
   <div class="tabs">
     <button class="tab active" onclick="setTab('imp',event)">📦 Por IMP</button>
     <button class="tab" onclick="setTab('llegadas',event)">📅 Llegadas</button>
-    <button class="tab" onclick="setTab('alertas',event)" id="tab-alertas-btn">🔔 Alertas</button>
+    <button class="tab" onclick="setTab('alertas',event)" id="tab-al">🔔 Alertas</button>
     <button class="tab" onclick="setTab('lineas',event)">📋 Todas las líneas</button>
   </div>
+
   <div id="panel-imp" class="panel active">
     <div class="two-col">
-      <div class="card"><div class="card-title">📊 Distribución activas</div><div id="dist-bars"></div></div>
-      <div class="card"><div class="card-title">🔧 Estado fábrica</div><div id="sfab-bars"></div></div>
+      <div class="card"><div class="card-title">Distribución activas</div><div id="dist-bars"></div></div>
+      <div class="card"><div class="card-title">Estado fábrica</div><div id="sfab-bars"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">📦 IMPs — clic para ver OCIs</div>
-      <div class="tgl-group">
-        <button class="tgl active" onclick="setImpFiltro('activos',this)">Activos</button>
-        <button class="tgl" onclick="setImpFiltro('cerrados',this)">Cerrados</button>
-        <button class="tgl" onclick="setImpFiltro('todos',this)">Todos</button>
+      <div class="card-title">IMPs — IMP → OCI → ítems</div>
+      <div class="tgl-grp">
+        <button class="tgl active" onclick="setTgl('activos',this)">Activos</button>
+        <button class="tgl" onclick="setTgl('cerrados',this)">Cerrados</button>
+        <button class="tgl" onclick="setTgl('todos',this)">Todos</button>
       </div>
       <div id="imp-list"></div>
     </div>
   </div>
+
   <div id="panel-llegadas" class="panel">
     <div class="two-col">
-      <div class="card"><div class="card-title" style="color:var(--success)">📅 Ingresan esta semana</div><div id="llegada-week"></div></div>
-      <div class="card"><div class="card-title" style="color:var(--accent)">📅 Ingresan este mes</div><div id="llegada-month"></div></div>
+      <div class="card"><div class="card-title" style="color:var(--ok)">📅 Ingresan esta semana</div><div id="lleg-week"></div></div>
+      <div class="card"><div class="card-title" style="color:var(--ac)">📅 Ingresan este mes</div><div id="lleg-month"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">📋 Todas con fecha programada</div>
-      <div style="overflow-x:auto">
-        <table class="main-table"><thead><tr><th>IMP</th><th>id_linea</th><th>Tipo</th><th>F. llegada puerto</th><th>F. estimada ingreso</th><th>Estado</th><th>Comentario</th></tr></thead><tbody id="tbody-llegadas"></tbody></table>
-      </div>
+      <div class="card-title">Todas con fecha programada</div>
+      <div style="overflow-x:auto"><table class="mtbl"><thead><tr><th>IMP</th><th>OCI</th><th>Tipo</th><th>F. llegada puerto</th><th>F. estimada (+7d)</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody id="tbody-lleg"></tbody></table></div>
+      <div style="font-size:9px;color:var(--mu);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--bd)">ℹ F. estimada ingreso = fecha_llegada + 7 días · Calculado automáticamente desde SharePoint</div>
     </div>
   </div>
+
   <div id="panel-alertas" class="panel">
-    <div class="card"><div class="card-title" style="color:var(--danger)">🔔 Sin comentario ni IMP — abiertas sin gestión</div><div id="alert-list"></div></div>
-    <div class="card"><div class="card-title" style="color:var(--warning)">⏰ Abiertas sin fecha de llegada</div><div id="alert-nodate"></div></div>
-    <div class="two-col">
-      <div class="kpi" style="background:var(--surface);border:0.5px solid var(--border)"><div class="kpi-val" style="color:var(--danger)" id="ka1">—</div><div class="kpi-lbl">Sin gestión</div></div>
-      <div class="kpi" style="background:var(--surface);border:0.5px solid var(--border)"><div class="kpi-val" style="color:var(--warning)" id="ka2">—</div><div class="kpi-lbl">Sin fecha llegada</div></div>
+    <div class="card" style="border-color:rgba(231,76,60,.4)">
+      <div class="card-title" style="color:var(--er)">🔔 Sin comentario ni IMP — abiertas sin gestión</div>
+      <div id="alert-list"></div>
+      <div id="alert-more" style="padding:5px 0 0;font-size:10px;text-align:center;color:var(--ac);cursor:pointer"></div>
+    </div>
+    <div class="card" style="border-color:rgba(243,156,18,.4)">
+      <div class="card-title" style="color:var(--wa)">⏰ Abiertas sin fecha de llegada</div>
+      <div id="alert-nodate"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="kpi"><div class="kpi-val" style="color:var(--er)" id="ka1">—</div><div class="kpi-lbl">Sin gestión</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:var(--wa)" id="ka2">—</div><div class="kpi-lbl">Sin fecha llegada</div></div>
     </div>
   </div>
+
   <div id="panel-lineas" class="panel">
     <div class="card">
-      <div class="card-title">📋 Detalle completo</div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-        <select id="f-st" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)"><option value="">O + C</option><option value="O">Abiertas</option><option value="C">Cerradas</option></select>
-        <select id="f-tp" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)"><option value="">Stock + Proyecto</option><option value="Stock">Stock</option><option value="Proyecto">Proyecto</option></select>
-        <select id="f-im" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)"><option value="">Todos los IMP</option></select>
-        <select id="f-sf" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)"><option value="">Todos los estados</option></select>
+      <div class="card-title">Detalle completo</div>
+      <div class="filt">
+        <select id="f-st" onchange="renderLineas()"><option value="">O + C</option><option value="O">Abiertas</option><option value="C">Cerradas</option></select>
+        <select id="f-tp" onchange="renderLineas()"><option value="">Stock + Proyecto</option><option value="Stock">Stock</option><option value="Proyecto">Proyecto</option></select>
+        <select id="f-im" onchange="renderLineas()"><option value="">Todos los IMP</option></select>
+        <select id="f-sf" onchange="renderLineas()"><option value="">Todos los estados</option></select>
       </div>
-      <div style="overflow-x:auto">
-        <table class="main-table"><thead><tr><th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Tipo</th><th>Estado</th><th>Fábrica</th><th>IMP</th><th>F. llegada</th><th>Alerta</th><th>Comentario</th></tr></thead><tbody id="tbody-lineas"></tbody></table>
-      </div>
-      <div class="footer-row"><span id="l-count">—</span><div class="prog-bar"><div class="prog-fill" id="l-prog" style="width:0%"></div></div><span id="l-pct">—</span></div>
+      <div style="overflow-x:auto"><table class="mtbl"><thead><tr><th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Tipo</th><th>Estado</th><th>Fábrica</th><th>IMP</th><th>F. llegada</th><th>F. estimada</th><th>Alerta</th><th>Comentario</th></tr></thead><tbody id="tbody-lin"></tbody></table></div>
+      <div class="frow"><span id="lcount">—</span><div class="pbar"><div class="pfill" id="lprog" style="width:0%"></div></div><span id="lpct">—</span></div>
     </div>
   </div>
 </div>
+
 <script>
-const CLIENT_ID='8fff6f5f-15cb-426c-af0f-0be068c3429f';
-const TENANT_ID='4611f723-f5a5-423b-88ae-0921781561ff';
-const SITE_URL='https://interamsa.sharepoint.com/sites/Automatizacin';
-const LIST_NAME='IMPORTACIONES_MASTERgpt';
-const scopes=['https://interamsa.sharepoint.com/AllSites.Read'];
+const CID='8fff6f5f-15cb-426c-af0f-0be068c3429f';
+const TID='4611f723-f5a5-423b-88ae-0921781561ff';
+const SITE='https://interamsa.sharepoint.com/sites/Automatizacin';
+const LIST='IMPORTACIONES_MASTERgpt';
+const SCOPES=['https://interamsa.sharepoint.com/AllSites.Read'];
+const FIELDS='id_linea,nro_oci,codigo_sap,descripcion,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto';
 
-const msalConfig={auth:{clientId:CLIENT_ID,authority:`https://login.microsoftonline.com/${TENANT_ID}`,redirectUri:window.location.origin+'/dashboard-importaciones/'},cache:{cacheLocation:'localStorage'}};
-const msal_app=new msal.PublicClientApplication(msalConfig);
+const msalCfg={auth:{clientId:CID,authority:`https://login.microsoftonline.com/${TID}`,redirectUri:window.location.origin+'/dashboard-importaciones/'},cache:{cacheLocation:'localStorage'}};
+const app=new msal.PublicClientApplication(msalCfg);
 
-let DATA=[];
-let impFiltro='activos';
+let RAW=[], DATA=[], impFiltro='activos', curYear='2026';
 const HOY=new Date();
 
-function setStatus(msg){document.getElementById('loader-msg').textContent=msg;}
-function setDetail(msg){document.getElementById('status-detail').textContent=msg;}
-function fDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return d;}}
-function dDiff(d){if(!d)return null;return Math.floor((HOY-new Date(d))/86400000);}
-function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
-function getTipo(p){if(!p)return'Proyecto';return p.toUpperCase().includes('STOCK')?'Stock':'Proyecto';}
-function inWeek(d){if(!d)return false;const dt=new Date(d);const diff=Math.floor((dt-HOY)/86400000);return diff>=-1&&diff<=7;}
-function inMonth(d){if(!d)return false;const dt=new Date(d);return dt.getFullYear()===HOY.getFullYear()&&dt.getMonth()===HOY.getMonth()&&dt>=HOY;}
-function impEstado(imp){const lines=DATA.filter(r=>r.IMP===imp);return lines.every(r=>r.line_status==='C')?'cerrado':'activo';}
-function sfabPill(s){if(!s)return'<span class="pill p-pend">—</span>';if(s.toLowerCase().includes('tr'))return`<span class="pill p-transit">${s}</span>`;if(s.toLowerCase().includes('prod'))return`<span class="pill p-prod">${s}</span>`;return`<span class="pill p-pend">${s}</span>`;}
-function tipoPill(t){return t==='Stock'?'<span class="pill p-stock">Stock</span>':'<span class="pill p-proj">Proyecto</span>';}
-function stPill(s){return s==='O'?'<span class="pill p-open">Abierta</span>':'<span class="pill p-closed">Cerrada</span>';}
-function alertPill(r){if(r.line_status==='O'&&!r.comentario&&!r.IMP)return'<span class="pill p-alert">Sin gestión</span>';return'';}
+const sl=msg=>document.getElementById('lmsg').textContent=msg;
+const sd=msg=>document.getElementById('ldet').textContent=msg;
+const fd=d=>{if(!d)return'—';try{return new Date(d).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return d;}};
+const dd=d=>{if(!d)return null;return Math.floor((HOY-new Date(d))/86400000);};
+const addD=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
+const tipo=p=>p&&p.toUpperCase().includes('STOCK')?'Stock':'Proyecto';
+const inWeek=d=>{if(!d)return false;const dt=new Date(d);const dif=Math.floor((dt-HOY)/86400000);return dif>=-1&&dif<=7;};
+const inMonth=d=>{if(!d)return false;const dt=new Date(d);return dt.getFullYear()===HOY.getFullYear()&&dt.getMonth()===HOY.getMonth()&&dt>=HOY;};
+const impSt=imp=>{const l=DATA.filter(r=>r.IMP===imp);return l.every(r=>r.st==='C')?'cerrado':'activo';};
+const sfPill=s=>{if(!s)return'<span class="pill p-pend">—</span>';const sl=s.toLowerCase();if(sl.includes('tr'))return`<span class="pill p-transit">${s}</span>`;if(sl.includes('prod'))return`<span class="pill p-prod">${s}</span>`;if(sl.includes('embar'))return`<span class="pill p-emb">${s}</span>`;if(sl.includes('recep'))return`<span class="pill p-rec">${s}</span>`;return`<span class="pill p-pend">${s}</span>`;};
+const tpPill=t=>t==='Stock'?'<span class="pill p-stock">Stock</span>':'<span class="pill p-proj">Proyecto</span>';
+const stPill=s=>s==='O'?'<span class="pill p-open">Abierta</span>':'<span class="pill p-closed">Cerrada</span>';
+const alPill=r=>r.st==='O'&&!r.com&&!r.IMP?'<span class="pill p-alert">Sin gestión</span>':'';
 
 async function init(){
   try{
-    await msal_app.initialize();
-    setStatus('Verificando sesión...');
-    const resp=await msal_app.handleRedirectPromise();
-    if(resp){
-      msal_app.setActiveAccount(resp.account);
-      document.getElementById('user-name').textContent=resp.account.name||resp.account.username;
-      setStatus('Cargando datos...');
-      await loadData();
-      return;
-    }
-    const accounts=msal_app.getAllAccounts();
-    if(accounts.length>0){
-      msal_app.setActiveAccount(accounts[0]);
-      document.getElementById('user-name').textContent=accounts[0].name||accounts[0].username;
-      setStatus('Cargando datos...');
-      await loadData();
-      return;
-    }
-    setStatus('Redirigiendo al login...');
-    await msal_app.loginRedirect({scopes,prompt:'select_account'});
-  }catch(e){
-    setStatus('Error de autenticación');
-    setDetail(e.message);
-    console.error(e);
-  }
+    await app.initialize();
+    sl('Verificando sesión...');
+    const resp=await app.handleRedirectPromise();
+    if(resp){app.setActiveAccount(resp.account);document.getElementById('uname').textContent=resp.account.name||resp.account.username;sl('Cargando datos...');await loadData();return;}
+    const accs=app.getAllAccounts();
+    if(accs.length>0){app.setActiveAccount(accs[0]);document.getElementById('uname').textContent=accs[0].name||accs[0].username;sl('Cargando datos...');await loadData();return;}
+    sl('Redirigiendo al login...');
+    await app.loginRedirect({scopes:SCOPES,prompt:'select_account'});
+  }catch(e){sl('Error de autenticación');sd(e.message);console.error(e);}
 }
 
 async function getToken(){
-  const account=msal_app.getActiveAccount();
-  try{
-    const r=await msal_app.acquireTokenSilent({scopes,account});
-    return r.accessToken;
-  }catch(e){
-    setStatus('Renovando permisos...');
-    await msal_app.acquireTokenRedirect({scopes});
-    return null;
-  }
+  const acc=app.getActiveAccount();
+  try{const r=await app.acquireTokenSilent({scopes:SCOPES,account:acc});return r.accessToken;}
+  catch{await app.acquireTokenRedirect({scopes:SCOPES});return null;}
 }
 
 async function loadData(){
   try{
-    setStatus('Obteniendo token...');
-    const token=await getToken();
-    if(!token)return;
-    setStatus('Conectando a SharePoint...');
-    let items=[];
-   const url=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=5000&$select=id_linea,nro_oci,codigo_sap,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto`;
-    setDetail('Cargando registros...');
-    const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json;odata=nometadata'}});
-    if(!res.ok){
-      const txt=await res.text();
-      setStatus('Error '+res.status);
-      setDetail(txt.substring(0,200));
-      return;
-    }
-    const data=await res.json();
-    items=data.value||[];
-    setDetail(`${items.length} registros cargados`);
-    DATA=items.map(r=>({
-      id_linea:r.id_linea||'',nro_oci:r.nro_oci||'',codigo_sap:r.codigo_sap||'',
-      descripcion:r.descripcion||'',proveedor:r.proovedor||'',
-      cantidad:r.cantidad||0,precio_unitario:r.precio_unitario||0,precio_total:r.precio_total||0,
-     fecha_oci:r.fecha_oci||null,line_status:r.linestatus||'',
-      status_fabrica:r.status_fabrica||'',prioridad:r.prioridad||'',
-      comentario:r.comentario||'',IMP:r.IMP||'',
-      fecha_embarque:r.fecha_embarque||null,fecha_llegada:r.fecha_llegada||null,
-      ingreso_interamsa:r.ingreso_interamsa||null,
-      fecha_actualizacion:r.fecha_actualizacion_correo||r.fecha_actualizacion||null,
-      Tipo:getTipo(r.prioridad),
-      FechaEstimadaIngreso:r.fecha_llegada?addDays(new Date(r.fecha_llegada),7):null
-    }));
-    document.getElementById('last-update').textContent='Actualizado: '+new Date().toLocaleTimeString('es-PE');
+    sl('Obteniendo token...');
+    const tok=await getToken();
+    if(!tok)return;
+    sl('Conectando a SharePoint...');
+    sd('Cargando registros...');
+    const url=`${SITE}/_api/web/lists/getbytitle('${LIST}')/items?$top=5000&$select=${FIELDS}`;
+    const res=await fetch(url,{headers:{Authorization:`Bearer ${tok}`,Accept:'application/json;odata=nometadata'}});
+    if(!res.ok){const t=await res.text();sl('Error '+res.status);sd(t.substring(0,200));return;}
+    const json=await res.json();
+    RAW=json.value||[];
+    sd(`${RAW.length} registros cargados`);
+    mapData();
+    document.getElementById('lupd').textContent='Actualizado: '+new Date().toLocaleTimeString('es-PE');
     render();
     document.getElementById('loader').style.display='none';
     document.getElementById('app').style.display='block';
-  }catch(e){
-    setStatus('Error al cargar datos');
-    setDetail(e.message);
-    console.error(e);
-  }
+  }catch(e){sl('Error');sd(e.message);console.error(e);}
 }
 
-function render(){initKpis();renderDist();renderImpList();renderLlegadas();renderAlertas();initFilters();renderLineas();}
+function mapData(){
+  DATA=RAW.map(r=>({
+    id:r.id_linea||'',oci:r.nro_oci||'',sap:r.codigo_sap||'',
+    desc:r.descripcion||'',prov:r.proovedor||'',
+    cant:r.cantidad||0,precio:r.precio_total||0,
+    foci:r.fecha_oci||null,st:r.linestatus||'',
+    sfab:r.status_fabrica||'',prior:r.prioridad||'',
+    com:r.comentario||'',IMP:r.IMP||'',
+    femb:r.fecha_embarque||null,fll:r.fecha_llegada||null,
+    ing:r.ingreso_interamsa||null,
+    fupd:r.fecha_actualizacion_correo||null,
+    sync:r.ultima_sincronizacion_sap||null,
+    Tipo:tipo(r.prioridad),
+    fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null
+  }));
+  filterByYear();
+}
+
+function filterByYear(){
+  if(curYear==='todos'){DATA=RAW.map(r=>DATA.find(d=>d.id===r.id_linea)||d);return;}
+  DATA=DATA.filter(r=>{
+    if(!r.foci)return true;
+    return new Date(r.foci).getFullYear()===parseInt(curYear);
+  });
+}
+
+function applyYear(){
+  curYear=document.getElementById('year-sel').value;
+  mapData();
+  render();
+}
+
+function render(){
+  initKpis();
+  renderNewOcis();
+  renderLogistic();
+  renderDist();
+  renderImpList();
+  renderLlegadas();
+  renderAlertas();
+  initFilters();
+  renderLineas();
+  renderNotifs();
+}
 
 function initKpis(){
-  const open=DATA.filter(r=>r.line_status==='O');
-  const closed=DATA.filter(r=>r.line_status==='C');
-  const alerts=DATA.filter(r=>r.line_status==='O'&&!r.comentario&&!r.IMP);
-  const allImps=[...new Set(DATA.filter(r=>r.IMP).map(r=>r.IMP))];
-  const impsActivos=allImps.filter(i=>impEstado(i)==='activo');
-  document.getElementById('k-open').textContent=open.length;
-  document.getElementById('k-open-s').textContent=`${[...new Set(open.map(r=>r.nro_oci))].length} OCIs distintas`;
-  document.getElementById('k-closed').textContent=closed.length;
-  document.getElementById('k-closed-s').textContent=`${DATA.length?Math.round(closed.length/DATA.length*100):0}% del total`;
-  document.getElementById('k-alert').textContent=alerts.length;
-  document.getElementById('k-imp').textContent=impsActivos.length;
-  document.getElementById('k-imp-s').textContent=`${allImps.length-impsActivos.length} cerrados en historial`;
-  document.getElementById('tab-alertas-btn').textContent=`🔔 Alertas${alerts.length>0?' ('+alerts.length+')':''}`;
-  document.getElementById('ka1').textContent=alerts.length;
-  document.getElementById('ka2').textContent=DATA.filter(r=>r.line_status==='O'&&!r.fecha_llegada).length;
+  const op=DATA.filter(r=>r.st==='O');
+  const cl=DATA.filter(r=>r.st==='C');
+  const al=DATA.filter(r=>r.st==='O'&&!r.com&&!r.IMP);
+  const imps=[...new Set(DATA.filter(r=>r.IMP).map(r=>r.IMP))];
+  const iact=imps.filter(i=>impSt(i)==='activo');
+  document.getElementById('k1').textContent=op.length;
+  document.getElementById('k1s').textContent=`${[...new Set(op.map(r=>r.oci))].length} OCIs distintas`;
+  document.getElementById('k2').textContent=cl.length;
+  document.getElementById('k2s').textContent=`${DATA.length?Math.round(cl.length/DATA.length*100):0}% del total`;
+  document.getElementById('k3').textContent=al.length;
+  document.getElementById('k4').textContent=iact.length;
+  document.getElementById('k4s').textContent=`${imps.length-iact.length} cerrados en historial`;
+  document.getElementById('tab-al').textContent=`🔔 Alertas${al.length?' ('+al.length+')':''}`;
+  document.getElementById('ka1').textContent=al.length;
+  document.getElementById('ka2').textContent=DATA.filter(r=>r.st==='O'&&!r.fll).length;
+  document.getElementById('ndot').style.display=al.length?'block':'none';
+}
+
+function renderNewOcis(){
+  const bar=document.getElementById('new-ocis-bar');
+  const nuevas=DATA.filter(r=>{
+    if(!r.sync)return false;
+    const d=dd(r.sync);
+    return d!==null&&d<=7&&d>=0;
+  });
+  const ocisNuevas=[...new Set(nuevas.map(r=>r.oci))];
+  if(!ocisNuevas.length){bar.innerHTML='<span style="font-size:10px;color:var(--mu)">📋 Sin OCIs nuevas esta semana</span>';return;}
+  const chips=ocisNuevas.slice(0,6).map(o=>{
+    const lines=nuevas.filter(r=>r.oci===o);
+    const d=dd(lines[0].sync);
+    const t=lines[0].Tipo;
+    return`<div class="oci-chip"><span style="font-weight:500;color:var(--ac);font-family:monospace">${o}</span><span style="color:var(--mu)">hace ${d}d</span>${tpPill(t)}</div>`;
+  }).join('');
+  bar.innerHTML=`<span class="new-ocis-lbl">✨ OCIs nuevas esta semana</span>${chips}<span style="font-size:9px;color:var(--mu);margin-left:auto">${ocisNuevas.length} OCI${ocisNuevas.length>1?'s':''} · últimos 7 días</span>`;
+}
+
+function renderNotifs(){
+  const al=DATA.filter(r=>r.st==='O'&&!r.com&&!r.IMP);
+  const nuevas=[...new Set(DATA.filter(r=>r.sync&&dd(r.sync)<=7&&dd(r.sync)>=0).map(r=>r.oci))];
+  const ing=DATA.filter(r=>r.fEst&&inWeek(r.fEst));
+  let html='';
+  if(al.length)html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(231,76,60,.15);color:var(--er)">🔔</div><div class="notif-body"><div class="notif-title">${al.length} líneas sin gestión</div><div class="notif-sub">Sin comentario ni IMP asignado</div></div><span class="notif-time">hoy</span></div>`;
+  if(nuevas.length)html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(79,142,247,.15);color:var(--ac)">➕</div><div class="notif-body"><div class="notif-title">${nuevas.length} OCIs nuevas esta semana</div><div class="notif-sub">${nuevas.slice(0,3).join(', ')}${nuevas.length>3?'...':''}</div></div><span class="notif-time">esta semana</span></div>`;
+  if(ing.length){const impIng=[...new Set(ing.filter(r=>r.IMP).map(r=>r.IMP))];html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(46,204,113,.15);color:var(--ok)">🚢</div><div class="notif-body"><div class="notif-title">${impIng.length||ing.length} IMP${impIng.length>1?'s':''} ingresan esta semana</div><div class="notif-sub">Fecha estimada +7d desde llegada</div></div><span class="notif-time">próximo</span></div>`;}
+  if(!html)html='<div style="padding:12px;font-size:10px;color:var(--mu);text-align:center">Sin notificaciones pendientes</div>';
+  document.getElementById('notif-list').innerHTML=html;
+}
+
+function renderLogistic(){
+  const estados=['pendiente','en produccion','embarcado','transito','recepcionado','cerrado'];
+  const labels=['Pendiente','En producción','Embarcado','Tránsito','Recepcionado','Cerrado'];
+  const colors=['#888780','#9b59b6','#4f8ef7','#1abc9c','#2ecc71','#555'];
+  const counts=estados.map(e=>DATA.filter(r=>r.sfab&&r.sfab.toLowerCase().includes(e.split(' ')[0])).length);
+  counts[5]=DATA.filter(r=>r.st==='C').length;
+  document.getElementById('log-grid').innerHTML=labels.map((l,i)=>`<div class="log-card"><div class="log-val" style="color:${colors[i]}">${counts[i]}</div><div class="log-lbl">${l}</div><div class="log-bar" style="background:${colors[i]}"></div></div>`).join('');
 }
 
 function renderDist(){
-  const open=DATA.filter(r=>r.line_status==='O');
-  const stock=open.filter(r=>r.Tipo==='Stock').length;
-  const proj=open.filter(r=>r.Tipo==='Proyecto').length;
-  const tot=stock+proj||1;
+  const op=DATA.filter(r=>r.st==='O');
+  const st=op.filter(r=>r.Tipo==='Stock').length;
+  const pr=op.filter(r=>r.Tipo==='Proyecto').length;
+  const tot=st+pr||1;
   document.getElementById('dist-bars').innerHTML=`
-    <div class="bar-row"><span class="bar-lbl">Stock</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(stock/tot*100)}%;background:#f39c12"></div></div><span class="bar-cnt">${stock}</span></div>
-    <div class="bar-row"><span class="bar-lbl">Proyecto / empresa</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(proj/tot*100)}%;background:#4f8ef7"></div></div><span class="bar-cnt">${proj}</span></div>
+    <div class="bar-row"><span class="bar-lbl">Stock</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(st/tot*100)}%;background:var(--wa)"></div></div><span class="bar-cnt">${st}</span></div>
+    <div class="bar-row"><span class="bar-lbl">Proyecto / empresa</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(pr/tot*100)}%;background:var(--ac)"></div></div><span class="bar-cnt">${pr}</span></div>
     <div class="sep"></div>
-    <div class="bar-row"><span class="bar-lbl">Sin IMP asignado</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(open.filter(r=>!r.IMP).length/tot*100)}%;background:#e74c3c"></div></div><span class="bar-cnt" style="color:#e74c3c">${open.filter(r=>!r.IMP).length}</span></div>`;
-  const sfabCounts={};
-  open.forEach(r=>{if(r.status_fabrica)sfabCounts[r.status_fabrica]=(sfabCounts[r.status_fabrica]||0)+1;});
-  const sfabHtml=Object.entries(sfabCounts).slice(0,5).map(([s,n])=>{
-    const col=s.toLowerCase().includes('tr')?'#1abc9c':s.toLowerCase().includes('prod')?'#9b59b6':'#f39c12';
-    return`<div class="bar-row"><span class="bar-lbl">${s}</span><div class="bar-track"><div class="bar-fill" style="width:${open.length?Math.round(n/open.length*100):0}%;background:${col}"></div></div><span class="bar-cnt">${n}</span></div>`;
-  }).join('')+`<div class="bar-row"><span class="bar-lbl">Sin estado</span><div class="bar-track"><div class="bar-fill" style="width:${open.length?Math.round(open.filter(r=>!r.status_fabrica).length/open.length*100):0}%;background:#2e3248"></div></div><span class="bar-cnt" style="color:#7b82a0">${open.filter(r=>!r.status_fabrica).length}</span></div>`;
-  document.getElementById('sfab-bars').innerHTML=sfabHtml;
+    <div class="bar-row"><span class="bar-lbl">Sin IMP asignado</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(op.filter(r=>!r.IMP).length/op.length*100):0}%;background:var(--er)"></div></div><span class="bar-cnt" style="color:var(--er)">${op.filter(r=>!r.IMP).length}</span></div>`;
+  const sfC={};
+  op.forEach(r=>{if(r.sfab)sfC[r.sfab]=(sfC[r.sfab]||0)+1;});
+  const sfH=Object.entries(sfC).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([s,n])=>{
+    const sl=s.toLowerCase();
+    const c=sl.includes('tr')?'#1abc9c':sl.includes('prod')?'#9b59b6':sl.includes('embar')?'#4f8ef7':sl.includes('recep')?'#2ecc71':'#f39c12';
+    return`<div class="bar-row"><span class="bar-lbl">${s}</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(n/op.length*100):0}%;background:${c}"></div></div><span class="bar-cnt">${n}</span></div>`;
+  }).join('')+`<div class="bar-row"><span class="bar-lbl">Sin estado</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(op.filter(r=>!r.sfab).length/op.length*100):0}%;background:var(--bd)"></div></div><span class="bar-cnt" style="color:var(--mu)">${op.filter(r=>!r.sfab).length}</span></div>`;
+  document.getElementById('sfab-bars').innerHTML=sfH;
 }
 
 function renderImpList(){
-  const allImps=[...new Set(DATA.filter(r=>r.IMP).map(r=>r.IMP))].sort((a,b)=>b.localeCompare(a));
-  const activos=allImps.filter(i=>impEstado(i)==='activo');
-  const cerrados=allImps.filter(i=>impEstado(i)==='cerrado');
-  const sinImp=DATA.filter(r=>r.line_status==='O'&&!r.IMP);
-  const filtered=impFiltro==='activos'?activos:impFiltro==='cerrados'?cerrados:allImps;
-  function impBlock(imp,isCerrado){
+  const allI=[...new Set(DATA.filter(r=>r.IMP).map(r=>r.IMP))].sort((a,b)=>b.localeCompare(a));
+  const act=allI.filter(i=>impSt(i)==='activo');
+  const cer=allI.filter(i=>impSt(i)==='cerrado');
+  const sinI=DATA.filter(r=>r.st==='O'&&!r.IMP);
+  const filt=impFiltro==='activos'?act:impFiltro==='cerrados'?cer:allI;
+
+  function ociBlock(oci,lines,impId){
+    const sid=`oci_${impId}_${oci.replace(/[^a-zA-Z0-9]/g,'_')}`;
+    const opL=lines.filter(r=>r.st==='O').length;
+    const clL=lines.filter(r=>r.st==='C').length;
+    const isNew=lines.some(r=>r.sync&&dd(r.sync)<=7&&dd(r.sync)>=0);
+    const t=[...new Set(lines.map(r=>r.Tipo))];
+    return`<div class="oci-sec"><div class="oci-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="oci-name">${oci}</span><div class="oci-meta"><span class="cbadge">${lines.length} ítems</span>${t.map(x=>tpPill(x)).join('')}${isNew?'<span class="pill p-new">nueva</span>':''}${opL?`<span style="color:var(--ac)">${opL} abiertas</span>`:''}${clL?`<span style="color:var(--ok)">${clL} cerradas</span>`:''}</div></div><div class="oci-body" id="${sid}"><table class="itbl"><thead><tr><th>id_linea</th><th>Código SAP</th><th>Descripción</th><th>Estado</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody>${lines.map(r=>`<tr><td style="font-family:monospace">${r.id}</td><td>${r.sap}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc||'—'}</td><td>${stPill(r.st)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--mu);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.com||'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  }
+
+  function impBlock(imp,isCer){
     const lines=DATA.filter(r=>r.IMP===imp);
-    const closedL=lines.filter(r=>r.line_status==='C').length;
-    const pct=lines.length?Math.round(closedL/lines.length*100):0;
+    const clL=lines.filter(r=>r.st==='C').length;
+    const pct=lines.length?Math.round(clL/lines.length*100):0;
     const tipos=[...new Set(lines.map(r=>r.Tipo))];
-    const hasAlert=lines.some(r=>r.line_status==='O'&&!r.comentario);
-    const sid=imp.replace(/[^a-zA-Z0-9]/g,'_');
-    return`<div class="imp-row"><div class="imp-hdr" onclick="toggleImp('${sid}')"><span class="chevron" id="chev-${sid}">▶</span><span class="imp-name" style="${isCerrado?'opacity:.6':''}">${imp}</span><div class="imp-meta"><span class="count-badge">${lines.length} líneas</span>${isCerrado?'<span class="pill p-closed">Cerrado</span>':'<span class="pill p-open">Activo</span>'}${tipos.map(t=>tipoPill(t)).join('')}${hasAlert&&!isCerrado?'<span class="pill p-alert">Alerta</span>':''}<div class="prog-mini"><div class="prog-mini-fill" style="width:${pct}%;background:${isCerrado?'#2ecc71':'#4f8ef7'}"></div></div><span style="font-size:10px;color:#7b82a0">${closedL}/${lines.length} cerradas</span></div></div><div class="imp-body" id="body-${sid}"><table class="imp-sub-table"><thead><tr><th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Tipo</th><th>Estado</th><th>Fábrica</th><th>F. llegada</th><th>Comentario</th></tr></thead><tbody>${lines.map(r=>`<tr><td style="font-family:monospace">${r.id_linea}</td><td>${r.nro_oci}</td><td>${r.proveedor}</td><td>${tipoPill(r.Tipo)}</td><td>${stPill(r.line_status)}</td><td>${sfabPill(r.status_fabrica)}</td><td>${fDate(r.fecha_llegada)}</td><td style="color:#7b82a0">${r.comentario||'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
+    const hasAl=lines.some(r=>r.st==='O'&&!r.com);
+    const sid=`imp_${imp.replace(/[^a-zA-Z0-9]/g,'_')}`;
+    const ocis=[...new Set(lines.map(r=>r.oci))];
+    return`<div class="imp-row"><div class="imp-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="imp-name" style="${isCer?'opacity:.6':''}">${imp}</span><div class="imp-meta"><span class="cbadge">${lines.length} líneas</span><span class="cbadge">${ocis.length} OCIs</span>${isCer?'<span class="pill p-closed">Cerrado</span>':'<span class="pill p-open">Activo</span>'}${tipos.map(t=>tpPill(t)).join('')}${hasAl&&!isCer?'<span class="pill p-alert">Alerta</span>':''}<div class="pmini"><div class="pmini-fill" style="width:${pct}%;background:${isCer?'var(--ok)':'var(--ac)'}"></div></div><span style="font-size:9px;color:var(--mu)">${clL}/${lines.length}</span></div></div><div class="imp-body" id="${sid}">${ocis.map(o=>ociBlock(o,lines.filter(r=>r.oci===o),sid)).join('')}</div></div>`;
   }
+
   let html='';
-  if(impFiltro==='todos'&&activos.length){
-    html+=`<div class="arch-label">◉ Activos (${activos.length})</div>`+activos.map(i=>impBlock(i,false)).join('');
-    if(cerrados.length)html+=`<div class="arch-label" style="margin-top:10px">🗂 Cerrados (${cerrados.length})</div>`+cerrados.map(i=>impBlock(i,true)).join('');
-  }else{html+=filtered.map(i=>impBlock(i,impEstado(i)==='cerrado')).join('');}
-  if(impFiltro==='activos'&&sinImp.length){
-    const sid='_sin_imp';
-    html+=`<div class="imp-row" style="margin-top:4px"><div class="imp-hdr" onclick="toggleImp('${sid}')"><span class="chevron" id="chev-${sid}">▶</span><span class="imp-name" style="color:#e74c3c">Sin IMP</span><div class="imp-meta"><span class="count-badge">${sinImp.length} líneas</span><span class="pill p-alert">Pendiente asignación</span></div></div><div class="imp-body" id="body-${sid}"><table class="imp-sub-table"><thead><tr><th>id_linea</th><th>OCI</th><th>Tipo</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody>${sinImp.map(r=>`<tr><td style="font-family:monospace">${r.id_linea}</td><td>${r.nro_oci}</td><td>${tipoPill(r.Tipo)}</td><td>${sfabPill(r.status_fabrica)}</td><td style="color:#7b82a0">${r.comentario||'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  if(impFiltro==='todos'&&act.length){
+    html+=`<div style="font-size:10px;color:var(--mu);padding:4px 0 4px;font-weight:500">◉ Activos (${act.length})</div>`+act.map(i=>impBlock(i,false)).join('');
+    if(cer.length)html+=`<div style="font-size:10px;color:var(--mu);padding:8px 0 4px;font-weight:500">🗂 Cerrados (${cer.length})</div>`+cer.map(i=>impBlock(i,true)).join('');
+  }else{html+=filt.map(i=>impBlock(i,impSt(i)==='cerrado')).join('');}
+
+  if(impFiltro==='activos'&&sinI.length){
+    const sid='imp_sin';
+    const ocis=[...new Set(sinI.map(r=>r.oci))];
+    html+=`<div class="imp-row" style="margin-top:4px"><div class="imp-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="imp-name" style="color:var(--er)">Sin IMP</span><div class="imp-meta"><span class="cbadge">${sinI.length} líneas</span><span class="cbadge">${ocis.length} OCIs</span><span class="pill p-alert">Pendiente asignación</span></div></div><div class="imp-body" id="${sid}">${ocis.map(o=>ociBlock(o,sinI.filter(r=>r.oci===o),sid)).join('')}</div></div>`;
   }
-  if(!filtered.length&&!sinImp.length)html='<div class="empty">Sin registros para este filtro</div>';
+  if(!html)html='<div class="empty">Sin registros para este filtro</div>';
   document.getElementById('imp-list').innerHTML=html;
 }
 
-function toggleImp(id){
-  const body=document.getElementById('body-'+id);
-  const chev=document.getElementById('chev-'+id);
-  if(body){body.classList.toggle('open');chev.textContent=body.classList.contains('open')?'▼':'▶';}
-}
-
-function setImpFiltro(f,el){
-  impFiltro=f;
-  document.querySelectorAll('.tgl').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  renderImpList();
-}
-
 function renderLlegadas(){
-  const conFecha=DATA.filter(r=>r.fecha_llegada&&!r.ingreso_interamsa).sort((a,b)=>new Date(a.fecha_llegada)-new Date(b.fecha_llegada));
-  const week=conFecha.filter(r=>r.FechaEstimadaIngreso&&inWeek(r.FechaEstimadaIngreso));
-  const month=conFecha.filter(r=>r.FechaEstimadaIngreso&&inMonth(r.FechaEstimadaIngreso)&&!inWeek(r.FechaEstimadaIngreso));
-  document.getElementById('llegada-week').innerHTML=week.length?week.map(r=>`<div class="llegada-item llegada-week"><span style="font-family:monospace;color:var(--text)">${r.IMP||r.id_linea}</span><span style="font-weight:500;color:#2ecc71">${fDate(r.FechaEstimadaIngreso)}</span></div>`).join(''):'<div class="empty">Sin ingresos esta semana</div>';
-  document.getElementById('llegada-month').innerHTML=month.length?month.map(r=>`<div class="llegada-item llegada-month"><span style="font-family:monospace;color:var(--text)">${r.IMP||r.id_linea}</span><span style="font-weight:500;color:#4f8ef7">${fDate(r.FechaEstimadaIngreso)}</span></div>`).join(''):'<div class="empty">Sin ingresos este mes</div>';
-  document.getElementById('tbody-llegadas').innerHTML=conFecha.map(r=>`<tr><td style="color:#4f8ef7">${r.IMP||'—'}</td><td style="font-family:monospace;font-size:9px">${r.id_linea}</td><td>${tipoPill(r.Tipo)}</td><td>${fDate(r.fecha_llegada)}</td><td style="font-weight:500">${fDate(r.FechaEstimadaIngreso)}</td><td>${sfabPill(r.status_fabrica)}</td><td style="color:#7b82a0">${r.comentario||'—'}</td></tr>`).join('');
+  const conF=DATA.filter(r=>r.fll&&!r.ing).sort((a,b)=>new Date(a.fll)-new Date(b.fll));
+  const week=conF.filter(r=>r.fEst&&inWeek(r.fEst));
+  const month=conF.filter(r=>r.fEst&&inMonth(r.fEst)&&!inWeek(r.fEst));
+
+  function llegBlock(r,sid){
+    const lines=DATA.filter(x=>x.IMP===r.IMP&&x.fll===r.fll);
+    const itemsHtml=lines.slice(0,10).map(x=>`<tr><td style="font-family:monospace;padding-left:6px">${x.id}</td><td>${x.desc||'—'}</td><td>${sfPill(x.sfab)}</td></tr>`).join('');
+    return`<div class="llegada-item ${sid==='w'?'llegada-week':'llegada-month'}" onclick="toggleEl('ll_${r.IMP||r.id}')"><div class="llegada-row"><span style="font-family:monospace;font-weight:500">${r.IMP||r.oci}</span><span style="font-weight:500;color:${sid==='w'?'var(--ok)':'var(--ac)'}">${fd(r.fEst)}</span></div><div class="llegada-sub">Puerto: ${fd(r.fll)} · estimado ingreso: +7d · ${lines.length} ítem${lines.length>1?'s':''}</div></div><div class="llegada-body" id="ll_${r.IMP||r.id}"><table class="itbl" style="font-size:9px"><thead><tr><th style="padding-left:6px">id_linea</th><th>Descripción</th><th>Fábrica</th></tr></thead><tbody>${itemsHtml}</tbody></table></div>`;
+  }
+
+  const weekImps=[...new Set(week.map(r=>r.IMP||r.oci))];
+  const monthImps=[...new Set(month.map(r=>r.IMP||r.oci))];
+  document.getElementById('lleg-week').innerHTML=weekImps.length?weekImps.map(i=>{const r=week.find(x=>(x.IMP||x.oci)===i);return llegBlock(r,'w');}).join(''):'<div class="empty">Sin ingresos estimados esta semana</div>';
+  document.getElementById('lleg-month').innerHTML=monthImps.length?monthImps.map(i=>{const r=month.find(x=>(x.IMP||x.oci)===i);return llegBlock(r,'m');}).join(''):'<div class="empty">Sin ingresos estimados este mes</div>';
+  document.getElementById('tbody-lleg').innerHTML=conF.map(r=>`<tr><td style="color:var(--ac)">${r.IMP||'—'}</td><td>${r.oci}</td><td>${tpPill(r.Tipo)}</td><td>${fd(r.fll)}</td><td style="font-weight:500;color:${inWeek(r.fEst)?'var(--ok)':inMonth(r.fEst)?'var(--ac)':'var(--tx)'}">${fd(r.fEst)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--mu)">${r.com||'—'}</td></tr>`).join('');
 }
 
 function renderAlertas(){
-  const sinGestion=DATA.filter(r=>r.line_status==='O'&&!r.comentario&&!r.IMP).sort((a,b)=>dDiff(b.fecha_actualizacion)-dDiff(a.fecha_actualizacion));
-  const sinFecha=DATA.filter(r=>r.line_status==='O'&&!r.fecha_llegada);
-  document.getElementById('alert-list').innerHTML=sinGestion.length?sinGestion.map(r=>{const d=dDiff(r.fecha_actualizacion);const col=d>=10?'#e74c3c':'#f39c12';return`<div class="alert-item"><div class="alert-dot" style="background:${col}"></div><div class="alert-info"><div class="alert-id">${r.id_linea}</div><div class="alert-reason">OCI ${r.nro_oci} · ${tipoPill(r.Tipo)} · sin comentario ni IMP</div></div><span class="alert-dias" style="color:${col}">${d!==null?d+'d':'—'}</span></div>`;}).join(''):'<div class="empty">Sin alertas activas</div>';
-  document.getElementById('alert-nodate').innerHTML=sinFecha.length?sinFecha.map(r=>`<div class="alert-item"><div class="alert-dot" style="background:#f39c12"></div><div class="alert-info"><div class="alert-id">${r.id_linea}</div><div class="alert-reason">OCI ${r.nro_oci} · ${r.IMP||'sin IMP'}</div></div><span class="pill p-nodate">Sin fecha</span></div>`).join(''):'<div class="empty">Todas tienen fecha asignada</div>';
+  const sg=DATA.filter(r=>r.st==='O'&&!r.com&&!r.IMP).sort((a,b)=>(dd(b.fupd)||0)-(dd(a.fupd)||0));
+  const sf=DATA.filter(r=>r.st==='O'&&!r.fll);
+  document.getElementById('alert-list').innerHTML=sg.slice(0,5).map(r=>{const d=dd(r.fupd);const c=d>=10?'var(--er)':'var(--wa)';return`<div class="alert-item"><div class="alert-dot" style="background:${c}"></div><div class="alert-info"><div class="alert-id">${r.id}</div><div class="alert-reason">OCI ${r.oci} · ${tpPill(r.Tipo)} · ${r.prior?r.prior.substring(0,40):'—'}</div></div><span style="font-size:10px;font-weight:500;color:${c}">${d!==null?d+'d':'—'}</span></div>`;}).join('')||'<div class="empty">Sin alertas activas</div>';
+  document.getElementById('alert-more').textContent=sg.length>5?`Ver todas (${sg.length}) ↗`:'';
+  document.getElementById('alert-nodate').innerHTML=sf.slice(0,5).map(r=>`<div class="alert-item"><div class="alert-dot" style="background:var(--wa)"></div><div class="alert-info"><div class="alert-id">${r.id}</div><div class="alert-reason">OCI ${r.oci} · ${r.IMP||'sin IMP'}</div></div><span class="pill p-pend">Sin fecha</span></div>`).join('')||'<div class="empty">Todas tienen fecha asignada</div>';
 }
 
 function initFilters(){
   const imps=[...new Set(DATA.filter(r=>r.IMP).map(r=>r.IMP))].sort();
   document.getElementById('f-im').innerHTML='<option value="">Todos los IMP</option>'+imps.map(i=>`<option>${i}</option>`).join('');
-  const sfabs=[...new Set(DATA.filter(r=>r.status_fabrica).map(r=>r.status_fabrica))];
+  const sfabs=[...new Set(DATA.filter(r=>r.sfab).map(r=>r.sfab))];
   document.getElementById('f-sf').innerHTML='<option value="">Todos los estados</option>'+sfabs.map(s=>`<option>${s}</option>`).join('');
 }
 
@@ -392,21 +508,34 @@ function renderLineas(){
   const ft=document.getElementById('f-tp').value;
   const fi=document.getElementById('f-im').value;
   const ff=document.getElementById('f-sf').value;
-  const rows=DATA.filter(r=>(!fs||r.line_status===fs)&&(!ft||r.Tipo===ft)&&(!fi||r.IMP===fi)&&(!ff||r.status_fabrica===ff));
-  document.getElementById('tbody-lineas').innerHTML=rows.map(r=>`<tr><td style="font-family:monospace;font-size:9px">${r.id_linea}</td><td>${r.nro_oci}</td><td>${r.proveedor}</td><td>${tipoPill(r.Tipo)}</td><td>${stPill(r.line_status)}</td><td>${sfabPill(r.status_fabrica)}</td><td style="color:#4f8ef7;font-size:10px">${r.IMP||'—'}</td><td style="font-size:10px">${fDate(r.fecha_llegada)}</td><td>${alertPill(r)}</td><td style="color:#7b82a0">${r.comentario||'—'}</td></tr>`).join('');
-  const cl=DATA.filter(r=>r.line_status==='C').length;
+  const rows=DATA.filter(r=>(!fs||r.st===fs)&&(!ft||r.Tipo===ft)&&(!fi||r.IMP===fi)&&(!ff||r.sfab===ff));
+  document.getElementById('tbody-lin').innerHTML=rows.map(r=>`<tr><td style="font-family:monospace;font-size:9px">${r.id}</td><td>${r.oci}</td><td>${r.prov}</td><td>${tpPill(r.Tipo)}</td><td>${stPill(r.st)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--ac);font-size:9px">${r.IMP||'—'}</td><td style="font-size:9px">${fd(r.fll)}</td><td style="font-size:9px;font-weight:500">${fd(r.fEst)}</td><td>${alPill(r)}</td><td style="color:var(--mu)">${r.com||'—'}</td></tr>`).join('');
+  const cl=DATA.filter(r=>r.st==='C').length;
   const pct=DATA.length?Math.round(cl/DATA.length*100):0;
-  document.getElementById('l-count').textContent=`${rows.length} líneas`;
-  document.getElementById('l-prog').style.width=pct+'%';
-  document.getElementById('l-pct').textContent=`${pct}% cerradas`;
+  document.getElementById('lcount').textContent=`${rows.length} líneas`;
+  document.getElementById('lprog').style.width=pct+'%';
+  document.getElementById('lpct').textContent=`${pct}% cerradas`;
 }
 
+function toggleEl(id){
+  const b=document.getElementById(id);
+  const c=document.getElementById('c'+id);
+  if(b){b.classList.toggle('open');if(c)c.textContent=b.classList.contains('open')?'▼':'▶';}
+}
 function setTab(t,e){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
   e.target.classList.add('active');
   document.getElementById('panel-'+t).classList.add('active');
 }
+function setTgl(f,el){
+  impFiltro=f;
+  document.querySelectorAll('.tgl').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderImpList();
+}
+function toggleNotif(){document.getElementById('np').classList.toggle('open');}
+document.addEventListener('click',e=>{const nw=document.getElementById('nw');if(nw&&!nw.contains(e.target))document.getElementById('np').classList.remove('open');});
 
 init();
 </script>
