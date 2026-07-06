@@ -248,7 +248,7 @@ async function loadData(){
     if(!token)return;
     setStatus('Conectando a SharePoint...');
     let items=[];
-    const url=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=5000&$select=id_linea,nro_oci,codigo_sap,descripcion,codigo_producto,proovedor,cantida,cantidadparcial,precio_unitario,precio_total,fecha_oci,line_status,status_fabrica,prioridad,comentario,fecha_actualizacion,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,fecha_actualizacion_correo`;
+   const url=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=5000&$select=id_linea,nro_oci,codigo_sap,descripcion,codigo_producto,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,Año`;
     setDetail('Cargando registros...');
     const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json;odata=nometadata'}});
     if(!res.ok){
@@ -264,7 +264,7 @@ async function loadData(){
       id_linea:r.id_linea||'',nro_oci:r.nro_oci||'',codigo_sap:r.codigo_sap||'',
       descripcion:r.descripcion||'',proveedor:r.proovedor||'',
       cantidad:r.cantida||0,precio_unitario:r.precio_unitario||0,precio_total:r.precio_total||0,
-      fecha_oci:r.fecha_oci||null,line_status:r.line_status||'',
+     fecha_oci:r.fecha_oci||null,line_status:r.linestatus||'',
       status_fabrica:r.status_fabrica||'',prioridad:r.prioridad||'',
       comentario:r.comentario||'',IMP:r.IMP||'',
       fecha_embarque:r.fecha_embarque||null,fecha_llegada:r.fecha_llegada||null,
