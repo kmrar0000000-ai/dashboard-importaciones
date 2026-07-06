@@ -7,152 +7,195 @@
 <script src="msal-browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0f1117;--s1:#1a1d27;--s2:#232636;--bd:#2e3248;--tx:#e8eaf0;--mu:#7b82a0;--ac:#4f8ef7;--ok:#2ecc71;--er:#e74c3c;--wa:#f39c12;--pu:#9b59b6;--te:#1abc9c;--r:8px;--fn:'Segoe UI',system-ui,sans-serif}
-body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh}
+:root{
+  --bg:#0a0f1e;--s0:#0d1428;--s1:#111827;--s2:#1a2540;--s3:#1e2d4d;
+  --bd:#1e3a5f;--bd2:#2563a8;--tx:#e2e8f0;--mu:#64748b;--ac:#38bdf8;
+  --ok:#34d399;--er:#f87171;--wa:#fbbf24;--pu:#a78bfa;--te:#2dd4bf;
+  --r:10px;--fn:'Segoe UI',system-ui,sans-serif;
+  --glow:0 0 20px rgba(56,189,248,.15);--card-glow:0 0 0 1px rgba(56,189,248,.1)
+}
+body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(56,189,248,.06) 0%,transparent 50%),
+  radial-gradient(ellipse at 80% 80%,rgba(167,139,250,.05) 0%,transparent 50%)}
 .loader{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:14px}
-.spin{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
+.spin{width:36px;height:36px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loader p{color:var(--mu);font-size:13px}
-.status-msg{font-size:11px;color:var(--wa);margin-top:4px}
-#app{display:none;padding:14px}
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:0.5px solid var(--bd);flex-wrap:wrap;gap:8px}
-.topbar h1{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px}
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.slide-in{animation:slideIn .3s ease}
+@keyframes slideIn{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
+#app{display:none;padding:16px 20px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:8px}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--ac),var(--pu));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.topbar h1{font-size:15px;font-weight:600;background:linear-gradient(135deg,var(--ac),var(--pu));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.year-sel{font-size:11px;padding:5px 10px;border-radius:var(--r);background:var(--s2);color:var(--tx);border:0.5px solid var(--bd);font-weight:500;cursor:pointer}
-.user-badge{font-size:10px;color:var(--mu);background:var(--s2);padding:3px 8px;border-radius:16px}
+.year-sel{font-size:11px;padding:5px 10px;border-radius:var(--r);background:var(--s2);color:var(--tx);border:1px solid var(--bd);font-weight:500;cursor:pointer;transition:border-color .2s}
+.year-sel:hover{border-color:var(--ac)}
+.user-badge{font-size:10px;color:var(--ac);background:rgba(56,189,248,.1);padding:4px 10px;border-radius:20px;border:1px solid rgba(56,189,248,.2)}
 .notif-wrap{position:relative}
-.notif-btn{background:none;border:none;cursor:pointer;padding:4px;color:var(--mu);position:relative}
-.notif-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:var(--er)}
-.notif-panel{display:none;position:absolute;top:32px;right:0;width:290px;background:var(--s2);border:0.5px solid var(--bd);border-radius:10px;z-index:200}
-.notif-panel.open{display:block}
-.notif-hdr{padding:8px 12px;border-bottom:0.5px solid var(--bd);font-size:11px;font-weight:500;display:flex;justify-content:space-between}
-.notif-item{display:flex;align-items:flex-start;gap:7px;padding:8px 12px;border-bottom:0.5px solid var(--bd);cursor:pointer;transition:background .12s}
+.notif-btn{background:rgba(56,189,248,.08);border:1px solid var(--bd);cursor:pointer;padding:6px 8px;color:var(--mu);position:relative;border-radius:8px;transition:all .2s}
+.notif-btn:hover{background:rgba(56,189,248,.15);border-color:var(--ac);color:var(--ac)}
+.notif-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--er);border:1.5px solid var(--bg)}
+.notif-panel{display:none;position:absolute;top:38px;right:0;width:300px;background:var(--s2);border:1px solid var(--bd2);border-radius:12px;z-index:200;box-shadow:var(--glow)}
+.notif-panel.open{display:block;animation:fadeIn .2s ease}
+.notif-hdr{padding:10px 14px;border-bottom:1px solid var(--bd);font-size:11px;font-weight:600;color:var(--ac);letter-spacing:.05em}
+.notif-item{display:flex;align-items:flex-start;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s}
 .notif-item:last-child{border-bottom:none}
-.notif-item:hover{background:var(--s1)}
-.notif-ico{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px}
+.notif-item:hover{background:rgba(56,189,248,.05)}
+.notif-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
 .notif-body{flex:1;min-width:0}
-.notif-title{font-size:10px;font-weight:500;margin-bottom:1px}
-.notif-sub{font-size:9px;color:var(--mu)}
+.notif-title{font-size:11px;font-weight:500;color:var(--tx);margin-bottom:2px}
+.notif-sub{font-size:10px;color:var(--mu)}
 .notif-time{font-size:9px;color:var(--mu);white-space:nowrap}
-.refresh-btn{font-size:10px;padding:4px 10px;border-radius:var(--r);border:0.5px solid var(--bd);background:var(--s2);color:var(--mu);cursor:pointer}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
-.kpi{background:var(--s1);border-radius:var(--r);padding:10px 12px}
-.kpi-val{font-size:20px;font-weight:500;line-height:1;margin-bottom:2px}
-.kpi-lbl{font-size:10px;color:var(--mu)}
-.kpi-sub{font-size:9px;margin-top:2px;color:var(--mu)}
-.new-ocis{background:rgba(79,142,247,.08);border:0.5px solid rgba(79,142,247,.3);border-radius:var(--r);padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.new-ocis-lbl{font-size:10px;font-weight:500;color:var(--ac);white-space:nowrap}
-.oci-chip{display:inline-flex;align-items:center;gap:5px;background:var(--s2);border:0.5px solid rgba(79,142,247,.4);border-radius:16px;padding:3px 8px;font-size:9px;cursor:pointer}
-.oci-chip:hover{background:rgba(79,142,247,.1)}
-.log-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:10px}
-.log-card{background:var(--s1);border-radius:var(--r);padding:8px 6px;text-align:center;border:0.5px solid var(--bd)}
-.log-val{font-size:16px;font-weight:500;margin-bottom:1px}
-.log-lbl{font-size:9px;color:var(--mu)}
-.log-bar{height:3px;border-radius:2px;margin-top:5px}
-.tabs{display:flex;gap:2px;margin-bottom:10px;background:var(--s1);border-radius:var(--r);padding:3px}
-.tab{padding:6px 12px;border-radius:6px;cursor:pointer;font-size:11px;color:var(--mu);border:none;background:none;transition:all .15s}
-.tab.active{background:var(--s2);color:var(--tx);font-weight:500}
-.panel{display:none}.panel.active{display:block}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.card{background:var(--s1);border:0.5px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:8px}
-.card-title{font-size:11px;font-weight:500;color:var(--mu);margin-bottom:8px}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.bar-lbl{font-size:10px;min-width:100px;color:var(--tx)}
-.bar-track{flex:1;height:5px;background:var(--s2);border-radius:3px;overflow:hidden}
-.bar-fill{height:100%;border-radius:3px}
-.bar-cnt{font-size:10px;min-width:20px;text-align:right;color:var(--mu)}
-.sep{height:1px;background:var(--bd);margin:6px 0}
-.imp-row{border:0.5px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:5px}
-.imp-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;background:var(--s2);user-select:none;transition:background .12s}
-.imp-hdr:hover{background:var(--s1)}
-.imp-name{font-size:11px;font-weight:500;min-width:80px}
-.imp-meta{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center}
-.imp-body{display:none;border-top:0.5px solid var(--bd)}
-.imp-body.open{display:block}
-.oci-sec{border-top:0.5px solid var(--bd)}
-.oci-hdr{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 20px;cursor:pointer;background:var(--s1);user-select:none;transition:background .12s}
+.refresh-btn{font-size:10px;padding:5px 12px;border-radius:var(--r);border:1px solid var(--bd);background:var(--s2);color:var(--mu);cursor:pointer;transition:all .2s}
+.refresh-btn:hover{border-color:var(--ac);color:var(--ac)}
+.search-wrap{margin-bottom:14px}
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:8px 14px;transition:all .25s}
+.search-bar:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px rgba(56,189,248,.1)}
+.search-bar input{background:none;border:none;outline:none;color:var(--tx);font-size:12px;flex:1;font-family:var(--fn)}
+.search-bar input::placeholder{color:var(--mu)}
+.search-results{background:var(--s1);border:1px solid var(--bd2);border-radius:12px;margin-top:6px;max-height:280px;overflow-y:auto;box-shadow:var(--glow)}
+.sr-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s}
+.sr-item:last-child{border-bottom:none}
+.sr-item:hover{background:rgba(56,189,248,.06)}
+.sr-badge{font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(56,189,248,.12);color:var(--ac);font-family:monospace;white-space:nowrap;border:1px solid rgba(56,189,248,.2)}
+.sr-info{flex:1;min-width:0}
+.sr-id{font-size:10px;font-family:monospace;color:var(--tx)}
+.sr-meta{font-size:9px;color:var(--mu)}
+.sr-imp{font-size:10px;color:var(--pu);font-weight:500}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:linear-gradient(135deg,var(--s1),var(--s2));border-radius:12px;padding:14px 16px;border:1px solid var(--bd);position:relative;overflow:hidden;transition:all .25s;cursor:default}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent);opacity:0;transition:opacity .25s}
+.kpi:hover{border-color:var(--bd2);transform:translateY(-1px);box-shadow:var(--glow)}
+.kpi:hover::before{opacity:1}
+.kpi-val{font-size:24px;font-weight:700;line-height:1;margin-bottom:4px}
+.kpi-lbl{font-size:10px;color:var(--mu);letter-spacing:.04em;text-transform:uppercase}
+.kpi-sub{font-size:10px;margin-top:4px;color:var(--mu)}
+.new-ocis{background:linear-gradient(135deg,rgba(56,189,248,.06),rgba(167,139,250,.04));border:1px solid rgba(56,189,248,.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.new-ocis-lbl{font-size:11px;font-weight:600;color:var(--ac);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.oci-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:20px;padding:4px 10px;font-size:10px;cursor:pointer;transition:all .2s}
+.oci-chip:hover{background:rgba(56,189,248,.15);transform:translateY(-1px)}
+.log-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.log-card{background:linear-gradient(135deg,var(--s1),var(--s2));border-radius:12px;padding:12px 10px;text-align:center;border:1px solid var(--bd);position:relative;overflow:hidden;transition:all .25s}
+.log-card:hover{transform:translateY(-2px);box-shadow:var(--glow)}
+.log-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 12px 12px}
+.log-val{font-size:20px;font-weight:700;margin-bottom:3px}
+.log-lbl{font-size:9px;color:var(--mu);letter-spacing:.04em;text-transform:uppercase}
+.tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--s0);border-radius:12px;padding:4px;border:1px solid var(--bd)}
+.tab{padding:8px 16px;border-radius:9px;cursor:pointer;font-size:11px;font-weight:500;color:var(--mu);border:none;background:none;transition:all .25s;letter-spacing:.02em}
+.tab.active{background:linear-gradient(135deg,var(--s2),var(--s3));color:var(--ac);box-shadow:var(--card-glow)}
+.tab:hover:not(.active){color:var(--tx);background:rgba(255,255,255,.04)}
+.panel{display:none}.panel.active{display:block;animation:fadeIn .3s ease}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.card{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin-bottom:10px;transition:border-color .2s}
+.card:hover{border-color:var(--bd2)}
+.card-title{font-size:11px;font-weight:600;color:var(--mu);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.bar-lbl{font-size:10px;min-width:110px;color:var(--tx)}
+.bar-track{flex:1;height:5px;background:var(--s0);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.bar-cnt{font-size:10px;min-width:22px;text-align:right;color:var(--mu);font-weight:500}
+.sep{height:1px;background:var(--bd);margin:8px 0}
+.imp-row{border:1px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:6px;transition:border-color .2s}
+.imp-row:hover{border-color:var(--bd2)}
+.imp-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;background:var(--s2);user-select:none;transition:background .15s}
+.imp-hdr:hover{background:var(--s3)}
+.imp-name{font-size:12px;font-weight:600;min-width:90px}
+.imp-meta{display:flex;gap:6px;flex:1;flex-wrap:wrap;align-items:center}
+.imp-body{display:none;border-top:1px solid var(--bd)}
+.imp-body.open{display:block;animation:fadeIn .25s ease}
+.oci-sec{border-top:1px solid var(--bd)}
+.oci-hdr{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 26px;cursor:pointer;background:var(--s1);user-select:none;transition:background .15s}
 .oci-hdr:hover{background:var(--s2)}
-.oci-name{font-size:10px;font-weight:500;color:var(--mu);font-family:monospace;min-width:80px}
+.oci-name{font-size:10px;font-weight:600;color:var(--ac);font-family:monospace;min-width:85px}
 .oci-meta{display:flex;gap:5px;flex:1;flex-wrap:wrap;align-items:center;font-size:9px;color:var(--mu)}
-.oci-body{display:none;border-top:0.5px solid var(--bd)}
-.oci-body.open{display:block}
+.oci-body{display:none;border-top:1px solid var(--bd)}
+.oci-body.open{display:block;animation:fadeIn .2s ease}
 .itbl{width:100%;border-collapse:collapse;font-size:9px}
-.itbl th{padding:4px 8px 4px 28px;text-align:left;color:var(--mu);background:var(--s2);font-weight:500}
-.itbl td{padding:4px 8px 4px 28px;border-top:0.5px solid var(--bd);color:var(--tx)}
-.itbl tr:hover td{background:var(--s1)}
-.pill{display:inline-block;font-size:9px;padding:1px 5px;border-radius:4px;font-weight:500;white-space:nowrap}
-.p-open{background:rgba(79,142,247,.15);color:#4f8ef7}
-.p-closed{background:rgba(46,204,113,.15);color:#2ecc71}
-.p-stock{background:rgba(243,156,18,.15);color:#f39c12}
-.p-proj{background:rgba(79,142,247,.15);color:#4f8ef7}
-.p-transit{background:rgba(26,188,156,.15);color:#1abc9c}
-.p-prod{background:rgba(155,89,182,.15);color:#9b59b6}
-.p-emb{background:rgba(79,142,247,.15);color:#185fa5}
-.p-rec{background:rgba(46,204,113,.2);color:#27500A}
-.p-pend{background:rgba(243,156,18,.15);color:#f39c12}
-.p-alert{background:rgba(231,76,60,.15);color:#e74c3c}
-.p-new{background:rgba(26,188,156,.15);color:#085041}
-.chev{font-size:10px;color:var(--mu);display:inline-block;transition:transform .15s}
+.itbl th{padding:6px 10px 6px 30px;text-align:left;color:var(--mu);background:var(--s0);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.itbl td{padding:6px 10px 6px 30px;border-top:1px solid var(--bd);color:var(--tx)}
+.itbl tr:hover td{background:rgba(56,189,248,.04)}
+.pill{display:inline-block;font-size:9px;padding:2px 7px;border-radius:5px;font-weight:600;white-space:nowrap;letter-spacing:.02em}
+.p-open{background:rgba(56,189,248,.12);color:var(--ac);border:1px solid rgba(56,189,248,.2)}
+.p-closed{background:rgba(52,211,153,.12);color:var(--ok);border:1px solid rgba(52,211,153,.2)}
+.p-stock{background:rgba(251,191,36,.1);color:var(--wa);border:1px solid rgba(251,191,36,.2)}
+.p-proj{background:rgba(167,139,250,.1);color:var(--pu);border:1px solid rgba(167,139,250,.2)}
+.p-transit{background:rgba(45,212,191,.1);color:var(--te);border:1px solid rgba(45,212,191,.2)}
+.p-prod{background:rgba(167,139,250,.1);color:var(--pu);border:1px solid rgba(167,139,250,.2)}
+.p-emb{background:rgba(56,189,248,.1);color:var(--ac);border:1px solid rgba(56,189,248,.2)}
+.p-rec{background:rgba(52,211,153,.15);color:var(--ok);border:1px solid rgba(52,211,153,.25)}
+.p-pend{background:rgba(251,191,36,.1);color:var(--wa);border:1px solid rgba(251,191,36,.2)}
+.p-alert{background:rgba(248,113,113,.1);color:var(--er);border:1px solid rgba(248,113,113,.2)}
+.p-new{background:rgba(45,212,191,.1);color:var(--te);border:1px solid rgba(45,212,191,.2)}
+.chev{font-size:11px;color:var(--mu);display:inline-block;transition:transform .2s}
 .chev.open{transform:rotate(90deg)}
-.cbadge{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;background:var(--s2);border:0.5px solid var(--bd);font-size:9px;color:var(--mu);padding:0 4px}
-.pmini{flex:1;height:3px;background:var(--s2);border-radius:2px;overflow:hidden;min-width:40px}
+.cbadge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--s0);border:1px solid var(--bd);font-size:9px;color:var(--mu);padding:0 5px;font-weight:500}
+.pmini{flex:1;height:4px;background:var(--s0);border-radius:2px;overflow:hidden;min-width:40px}
 .pmini-fill{height:100%;border-radius:2px}
-.tgl-grp{display:flex;gap:4px;margin-bottom:10px}
-.tgl{font-size:10px;padding:4px 10px;border-radius:var(--r);cursor:pointer;border:0.5px solid var(--bd);background:var(--s2);color:var(--mu)}
-.tgl.active{background:var(--ac);color:#fff;border-color:var(--ac)}
-.llegada-item{padding:7px 10px;border-radius:6px;margin-bottom:4px;cursor:pointer}
-.llegada-week{background:rgba(46,204,113,.08);border-left:3px solid #2ecc71;border-radius:0 6px 6px 0}
-.llegada-month{background:rgba(79,142,247,.08);border-left:3px solid #4f8ef7;border-radius:0 6px 6px 0}
-.llegada-row{display:flex;align-items:center;justify-content:space-between;font-size:10px}
-.llegada-sub{font-size:9px;color:var(--mu);margin-top:2px}
-.llegada-body{display:none;margin-top:4px;padding:6px 8px;background:var(--s2);border-radius:6px}
-.llegada-body.open{display:block}
-.alert-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--bd)}
+.tgl-grp{display:flex;gap:4px;margin-bottom:12px}
+.tgl{font-size:10px;padding:5px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--bd);background:var(--s2);color:var(--mu);transition:all .2s;font-weight:500}
+.tgl.active{background:rgba(56,189,248,.15);color:var(--ac);border-color:rgba(56,189,248,.4)}
+.llegada-item{padding:10px 14px;border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.llegada-week{background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.2)}
+.llegada-week:hover{background:rgba(52,211,153,.1);transform:translateX(2px)}
+.llegada-month{background:rgba(56,189,248,.06);border-color:rgba(56,189,248,.2)}
+.llegada-month:hover{background:rgba(56,189,248,.1);transform:translateX(2px)}
+.llegada-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:500}
+.llegada-sub{font-size:9px;color:var(--mu);margin-top:3px}
+.llegada-body{display:none;margin-top:8px;padding:8px 10px;background:var(--s0);border-radius:8px;border:1px solid var(--bd)}
+.llegada-body.open{display:block;animation:fadeIn .2s ease}
+.alert-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd);transition:background .15s}
 .alert-item:last-child{border-bottom:none}
-.alert-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.alert-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 .alert-info{flex:1;min-width:0}
-.alert-id{font-size:10px;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-id{font-size:10px;font-family:monospace;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .alert-reason{font-size:9px;color:var(--mu)}
 .mtbl{width:100%;border-collapse:collapse;font-size:10px}
-.mtbl th{padding:5px 7px;text-align:left;color:var(--mu);border-bottom:0.5px solid var(--bd);font-size:9px;white-space:nowrap;font-weight:500}
-.mtbl td{padding:5px 7px;border-bottom:0.5px solid var(--bd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px}
+.mtbl th{padding:7px 9px;text-align:left;color:var(--mu);border-bottom:1px solid var(--bd);font-size:9px;white-space:nowrap;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.mtbl td{padding:7px 9px;border-bottom:1px solid var(--bd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;transition:background .1s}
 .mtbl tr:last-child td{border-bottom:none}
-.mtbl tr:hover td{background:var(--s2)}
-.frow{display:flex;align-items:center;gap:8px;padding:6px 0 0;font-size:10px;color:var(--mu);border-top:0.5px solid var(--bd);margin-top:6px}
-.pbar{flex:1;height:3px;background:var(--s2);border-radius:2px;overflow:hidden}
-.pfill{height:100%;border-radius:2px;background:var(--ac)}
-.empty{font-size:10px;color:var(--mu);padding:8px 0;text-align:center}
-.filt{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
-.filt select{font-size:10px;padding:3px 6px;border-radius:var(--r);background:var(--s2);color:var(--tx);border:0.5px solid var(--bd)}
-@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.log-grid{grid-template-columns:repeat(3,1fr)}}
+.mtbl tr:hover td{background:rgba(56,189,248,.04)}
+.frow{display:flex;align-items:center;gap:10px;padding:8px 0 0;font-size:10px;color:var(--mu);border-top:1px solid var(--bd);margin-top:8px}
+.pbar{flex:1;height:4px;background:var(--s0);border-radius:2px;overflow:hidden}
+.pfill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--ac),var(--pu))}
+.empty{font-size:11px;color:var(--mu);padding:12px 0;text-align:center}
+.filt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.filt select{font-size:10px;padding:4px 8px;border-radius:8px;background:var(--s2);color:var(--tx);border:1px solid var(--bd);transition:border-color .2s;cursor:pointer}
+.filt select:hover{border-color:var(--ac)}
+.hl-row{animation:highlight .15s ease;background:rgba(56,189,248,.12)!important}
+@keyframes highlight{from{background:rgba(56,189,248,.3)}to{background:rgba(56,189,248,.12)}}
+@media(max-width:600px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.log-grid{grid-template-columns:repeat(3,1fr)}.tabs{flex-wrap:wrap}}
 </style>
 </head>
 <body>
 <div class="loader" id="loader">
-  <div style="font-size:18px;font-weight:500">Control de importaciones</div>
-  <div style="font-size:11px;color:var(--mu)">Interamsa</div>
+  <div style="font-size:16px;font-weight:600;background:linear-gradient(135deg,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Control de importaciones</div>
+  <div style="font-size:11px;color:#64748b">Inversiones Interamericanas</div>
   <div class="spin"></div>
-  <p id="lmsg">Iniciando sesión...</p>
-  <p id="ldet" class="status-msg"></p>
+  <p id="lmsg" style="color:#64748b;font-size:13px">Iniciando sesión...</p>
+  <p id="ldet" style="font-size:11px;color:#fbbf24;margin-top:4px"></p>
 </div>
 <div id="app">
   <div class="topbar">
-    <h1>📦 Control de importaciones</h1>
+    <div class="topbar-brand">
+      <div class="brand-icon">📦</div>
+      <h1>Control de importaciones</h1>
+    </div>
     <div class="topbar-right">
       <select class="year-sel" id="year-sel" onchange="applyYear()">
         <option value="2026">2026</option>
         <option value="2025">2025</option>
-        <option value="todos">Todos</option>
+        <option value="todos">Todos los años</option>
       </select>
       <span class="user-badge" id="uname">—</span>
       <span style="font-size:10px;color:var(--mu)" id="lupd">—</span>
       <div class="notif-wrap" id="nw">
         <button class="notif-btn" onclick="toggleNotif()" aria-label="Notificaciones">
-          🔔
-          <span class="notif-dot" id="ndot"></span>
+          🔔<span class="notif-dot" id="ndot" style="display:none"></span>
         </button>
         <div class="notif-panel" id="np">
-          <div class="notif-hdr"><span>Notificaciones</span></div>
+          <div class="notif-hdr">Notificaciones</div>
           <div id="notif-list"></div>
         </div>
       </div>
@@ -160,11 +203,21 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh
     </div>
   </div>
 
+  <div class="search-wrap">
+    <div class="search-bar">
+      <span style="font-size:15px;color:var(--ac)">🔍</span>
+      <input type="text" id="search-input" placeholder="Buscar por código de producto (mínimo 3 dígitos de cualquier parte del código)..." oninput="handleSearch()" autocomplete="off">
+      <span id="search-count" style="font-size:10px;color:var(--mu);white-space:nowrap"></span>
+      <button onclick="clearSearch()" id="search-clear" style="display:none;background:none;border:none;color:var(--mu);cursor:pointer;font-size:14px;padding:2px">✕</button>
+    </div>
+    <div id="search-results" style="display:none" class="search-results"></div>
+  </div>
+
   <div class="kpi-grid">
-    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--ac)">◉</div><div class="kpi-val" style="color:var(--ac)" id="k1">—</div><div class="kpi-lbl">Líneas activas (O)</div><div class="kpi-sub" id="k1s">—</div></div>
-    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--ok)">✓</div><div class="kpi-val" style="color:var(--ok)" id="k2">—</div><div class="kpi-lbl">Líneas cerradas (C)</div><div class="kpi-sub" id="k2s">—</div></div>
-    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--er)">🔔</div><div class="kpi-val" style="color:var(--er)" id="k3">—</div><div class="kpi-lbl">Alertas sin gestión</div><div class="kpi-sub" style="color:var(--er)">sin comentario ni IMP</div></div>
-    <div class="kpi"><div style="font-size:13px;margin-bottom:4px;color:var(--mu)">📦</div><div class="kpi-val" id="k4">—</div><div class="kpi-lbl">IMPs activos</div><div class="kpi-sub" id="k4s">—</div></div>
+    <div class="kpi"><div style="font-size:11px;color:var(--ac);margin-bottom:6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">Líneas activas (O)</div><div class="kpi-val" style="color:var(--ac)" id="k1">—</div><div class="kpi-sub" id="k1s">—</div></div>
+    <div class="kpi"><div style="font-size:11px;color:var(--ok);margin-bottom:6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">Líneas cerradas (C)</div><div class="kpi-val" style="color:var(--ok)" id="k2">—</div><div class="kpi-sub" id="k2s">—</div></div>
+    <div class="kpi"><div style="font-size:11px;color:var(--er);margin-bottom:6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">Alertas sin gestión</div><div class="kpi-val" style="color:var(--er)" id="k3">—</div><div class="kpi-sub" style="color:var(--er)">sin comentario ni IMP</div></div>
+    <div class="kpi"><div style="font-size:11px;color:var(--pu);margin-bottom:6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">IMPs activos</div><div class="kpi-val" style="color:var(--pu)" id="k4">—</div><div class="kpi-sub" id="k4s">—</div></div>
   </div>
 
   <div class="new-ocis" id="new-ocis-bar"></div>
@@ -173,18 +226,18 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh
 
   <div class="tabs">
     <button class="tab active" onclick="setTab('imp',event)">📦 Por IMP</button>
-    <button class="tab" onclick="setTab('llegadas',event)">📅 Llegadas</button>
+    <button class="tab" onclick="setTab('llegadas',event)">🚢 Llegadas</button>
     <button class="tab" onclick="setTab('alertas',event)" id="tab-al">🔔 Alertas</button>
     <button class="tab" onclick="setTab('lineas',event)">📋 Todas las líneas</button>
   </div>
 
   <div id="panel-imp" class="panel active">
     <div class="two-col">
-      <div class="card"><div class="card-title">Distribución activas</div><div id="dist-bars"></div></div>
-      <div class="card"><div class="card-title">Estado fábrica</div><div id="sfab-bars"></div></div>
+      <div class="card"><div class="card-title">📊 Distribución activas</div><div id="dist-bars"></div></div>
+      <div class="card"><div class="card-title">🔧 Estado fábrica</div><div id="sfab-bars"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">IMPs — IMP → OCI → ítems</div>
+      <div class="card-title">📦 IMPs — IMP → OCI → ítems</div>
       <div class="tgl-grp">
         <button class="tgl active" onclick="setTgl('activos',this)">Activos</button>
         <button class="tgl" onclick="setTgl('cerrados',this)">Cerrados</button>
@@ -196,35 +249,35 @@ body{background:var(--bg);color:var(--tx);font-family:var(--fn);min-height:100vh
 
   <div id="panel-llegadas" class="panel">
     <div class="two-col">
-      <div class="card"><div class="card-title" style="color:var(--ok)">📅 Ingresan esta semana</div><div id="lleg-week"></div></div>
-      <div class="card"><div class="card-title" style="color:var(--ac)">📅 Ingresan este mes</div><div id="lleg-month"></div></div>
+      <div class="card"><div class="card-title" style="color:var(--ok)">🟢 Ingresan esta semana</div><div id="lleg-week"></div></div>
+      <div class="card"><div class="card-title" style="color:var(--ac)">🔵 Ingresan este mes</div><div id="lleg-month"></div></div>
     </div>
     <div class="card">
-      <div class="card-title">Todas con fecha programada</div>
+      <div class="card-title">📋 Todas con fecha programada</div>
       <div style="overflow-x:auto"><table class="mtbl"><thead><tr><th>IMP</th><th>OCI</th><th>Tipo</th><th>F. llegada puerto</th><th>F. estimada (+7d)</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody id="tbody-lleg"></tbody></table></div>
-      <div style="font-size:9px;color:var(--mu);margin-top:6px;padding-top:6px;border-top:0.5px solid var(--bd)">ℹ F. estimada ingreso = fecha_llegada + 7 días · Calculado automáticamente desde SharePoint</div>
+      <div style="font-size:9px;color:var(--mu);margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)">ℹ F. estimada ingreso = fecha_llegada + 7 días · Se calcula automáticamente cuando se registra la fecha en SharePoint</div>
     </div>
   </div>
 
   <div id="panel-alertas" class="panel">
-    <div class="card" style="border-color:rgba(231,76,60,.4)">
-      <div class="card-title" style="color:var(--er)">🔔 Sin comentario ni IMP — abiertas sin gestión</div>
+    <div class="card" style="border-color:rgba(248,113,113,.3)">
+      <div class="card-title" style="color:var(--er)">🔴 Sin comentario ni IMP — abiertas sin gestión</div>
       <div id="alert-list"></div>
-      <div id="alert-more" style="padding:5px 0 0;font-size:10px;text-align:center;color:var(--ac);cursor:pointer"></div>
+      <div id="alert-more" style="padding:6px 0 0;font-size:10px;text-align:center;color:var(--ac);cursor:pointer"></div>
     </div>
-    <div class="card" style="border-color:rgba(243,156,18,.4)">
-      <div class="card-title" style="color:var(--wa)">⏰ Abiertas sin fecha de llegada</div>
+    <div class="card" style="border-color:rgba(251,191,36,.3)">
+      <div class="card-title" style="color:var(--wa)">🟡 Abiertas sin fecha de llegada</div>
       <div id="alert-nodate"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="kpi"><div class="kpi-val" style="color:var(--er)" id="ka1">—</div><div class="kpi-lbl">Sin gestión</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:var(--wa)" id="ka2">—</div><div class="kpi-lbl">Sin fecha llegada</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="kpi"><div style="font-size:11px;color:var(--er);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Sin gestión</div><div class="kpi-val" style="color:var(--er)" id="ka1">—</div></div>
+      <div class="kpi"><div style="font-size:11px;color:var(--wa);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Sin fecha llegada</div><div class="kpi-val" style="color:var(--wa)" id="ka2">—</div></div>
     </div>
   </div>
 
   <div id="panel-lineas" class="panel">
     <div class="card">
-      <div class="card-title">Detalle completo</div>
+      <div class="card-title">📋 Detalle completo</div>
       <div class="filt">
         <select id="f-st" onchange="renderLineas()"><option value="">O + C</option><option value="O">Abiertas</option><option value="C">Cerradas</option></select>
         <select id="f-tp" onchange="renderLineas()"><option value="">Stock + Proyecto</option><option value="Stock">Stock</option><option value="Proyecto">Proyecto</option></select>
@@ -246,20 +299,20 @@ const SCOPES=['https://interamsa.sharepoint.com/AllSites.Read'];
 const FIELDS='id_linea,nro_oci,codigo_sap,descripcion,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto';
 
 const msalCfg={auth:{clientId:CID,authority:`https://login.microsoftonline.com/${TID}`,redirectUri:window.location.origin+'/dashboard-importaciones/'},cache:{cacheLocation:'localStorage'}};
-const app=new msal.PublicClientApplication(msalCfg);
+const msalApp=new msal.PublicClientApplication(msalCfg);
 
-let RAW=[], DATA=[], impFiltro='activos', curYear='2026';
+let RAW=[],DATA=[],impFiltro='activos',curYear='2026';
 const HOY=new Date();
 
-const sl=msg=>document.getElementById('lmsg').textContent=msg;
-const sd=msg=>document.getElementById('ldet').textContent=msg;
+const sl=m=>document.getElementById('lmsg').textContent=m;
+const sd=m=>document.getElementById('ldet').textContent=m;
 const fd=d=>{if(!d)return'—';try{return new Date(d).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return d;}};
 const dd=d=>{if(!d)return null;return Math.floor((HOY-new Date(d))/86400000);};
 const addD=(d,n)=>{const r=new Date(d);r.setDate(r.getDate()+n);return r;};
 const tipo=p=>p&&p.toUpperCase().includes('STOCK')?'Stock':'Proyecto';
 const inWeek=d=>{if(!d)return false;const dt=new Date(d);const dif=Math.floor((dt-HOY)/86400000);return dif>=-1&&dif<=7;};
 const inMonth=d=>{if(!d)return false;const dt=new Date(d);return dt.getFullYear()===HOY.getFullYear()&&dt.getMonth()===HOY.getMonth()&&dt>=HOY;};
-const impSt=imp=>{const l=DATA.filter(r=>r.IMP===imp);return l.every(r=>r.st==='C')?'cerrado':'activo';};
+const impSt=imp=>{const l=DATA.filter(r=>r.IMP===imp);return l.length&&l.every(r=>r.st==='C')?'cerrado':'activo';};
 const sfPill=s=>{if(!s)return'<span class="pill p-pend">—</span>';const sl=s.toLowerCase();if(sl.includes('tr'))return`<span class="pill p-transit">${s}</span>`;if(sl.includes('prod'))return`<span class="pill p-prod">${s}</span>`;if(sl.includes('embar'))return`<span class="pill p-emb">${s}</span>`;if(sl.includes('recep'))return`<span class="pill p-rec">${s}</span>`;return`<span class="pill p-pend">${s}</span>`;};
 const tpPill=t=>t==='Stock'?'<span class="pill p-stock">Stock</span>':'<span class="pill p-proj">Proyecto</span>';
 const stPill=s=>s==='O'?'<span class="pill p-open">Abierta</span>':'<span class="pill p-closed">Cerrada</span>';
@@ -267,38 +320,32 @@ const alPill=r=>r.st==='O'&&!r.com&&!r.IMP?'<span class="pill p-alert">Sin gesti
 
 async function init(){
   try{
-    await app.initialize();
-    sl('Verificando sesión...');
-    const resp=await app.handleRedirectPromise();
-    if(resp){app.setActiveAccount(resp.account);document.getElementById('uname').textContent=resp.account.name||resp.account.username;sl('Cargando datos...');await loadData();return;}
-    const accs=app.getAllAccounts();
-    if(accs.length>0){app.setActiveAccount(accs[0]);document.getElementById('uname').textContent=accs[0].name||accs[0].username;sl('Cargando datos...');await loadData();return;}
+    await msalApp.initialize();sl('Verificando sesión...');
+    const resp=await msalApp.handleRedirectPromise();
+    if(resp){msalApp.setActiveAccount(resp.account);document.getElementById('uname').textContent=resp.account.name||resp.account.username;sl('Cargando datos...');await loadData();return;}
+    const accs=msalApp.getAllAccounts();
+    if(accs.length>0){msalApp.setActiveAccount(accs[0]);document.getElementById('uname').textContent=accs[0].name||accs[0].username;sl('Cargando datos...');await loadData();return;}
     sl('Redirigiendo al login...');
-    await app.loginRedirect({scopes:SCOPES,prompt:'select_account'});
+    await msalApp.loginRedirect({scopes:SCOPES,prompt:'select_account'});
   }catch(e){sl('Error de autenticación');sd(e.message);console.error(e);}
 }
 
 async function getToken(){
-  const acc=app.getActiveAccount();
-  try{const r=await app.acquireTokenSilent({scopes:SCOPES,account:acc});return r.accessToken;}
-  catch{await app.acquireTokenRedirect({scopes:SCOPES});return null;}
+  const acc=msalApp.getActiveAccount();
+  try{const r=await msalApp.acquireTokenSilent({scopes:SCOPES,account:acc});return r.accessToken;}
+  catch{await msalApp.acquireTokenRedirect({scopes:SCOPES});return null;}
 }
 
 async function loadData(){
   try{
-    sl('Obteniendo token...');
-    const tok=await getToken();
-    if(!tok)return;
-    sl('Conectando a SharePoint...');
-    sd('Cargando registros...');
+    sl('Obteniendo token...');const tok=await getToken();if(!tok)return;
+    sl('Conectando a SharePoint...');sd('Cargando registros...');
     const url=`${SITE}/_api/web/lists/getbytitle('${LIST}')/items?$top=5000&$select=${FIELDS}`;
     const res=await fetch(url,{headers:{Authorization:`Bearer ${tok}`,Accept:'application/json;odata=nometadata'}});
     if(!res.ok){const t=await res.text();sl('Error '+res.status);sd(t.substring(0,200));return;}
-    const json=await res.json();
-    RAW=json.value||[];
-    sd(`${RAW.length} registros cargados`);
-    mapData();
-    document.getElementById('lupd').textContent='Actualizado: '+new Date().toLocaleTimeString('es-PE');
+    const json=await res.json();RAW=json.value||[];
+    sd(`${RAW.length} registros`);mapData();
+    document.getElementById('lupd').textContent='↻ '+new Date().toLocaleTimeString('es-PE');
     render();
     document.getElementById('loader').style.display='none';
     document.getElementById('app').style.display='block';
@@ -306,7 +353,7 @@ async function loadData(){
 }
 
 function mapData(){
-  DATA=RAW.map(r=>({
+  const allMapped=RAW.map(r=>({
     id:r.id_linea||'',oci:r.nro_oci||'',sap:r.codigo_sap||'',
     desc:r.descripcion||'',prov:r.proovedor||'',
     cant:r.cantidad||0,precio:r.precio_total||0,
@@ -317,37 +364,20 @@ function mapData(){
     ing:r.ingreso_interamsa||null,
     fupd:r.fecha_actualizacion_correo||null,
     sync:r.ultima_sincronizacion_sap||null,
+    cprod:String(r.codigo_producto||''),
     Tipo:tipo(r.prioridad),
     fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null
   }));
-  filterByYear();
+  if(curYear==='todos'){DATA=allMapped;}
+  else{DATA=allMapped.filter(r=>!r.foci||new Date(r.foci).getFullYear()===parseInt(curYear));}
 }
 
-function filterByYear(){
-  if(curYear==='todos'){DATA=RAW.map(r=>DATA.find(d=>d.id===r.id_linea)||d);return;}
-  DATA=DATA.filter(r=>{
-    if(!r.foci)return true;
-    return new Date(r.foci).getFullYear()===parseInt(curYear);
-  });
-}
-
-function applyYear(){
-  curYear=document.getElementById('year-sel').value;
-  mapData();
-  render();
-}
+function applyYear(){curYear=document.getElementById('year-sel').value;mapData();render();}
 
 function render(){
-  initKpis();
-  renderNewOcis();
-  renderLogistic();
-  renderDist();
-  renderImpList();
-  renderLlegadas();
-  renderAlertas();
-  initFilters();
-  renderLineas();
-  renderNotifs();
+  initKpis();renderNewOcis();renderLogistic();
+  renderDist();renderImpList();renderLlegadas();
+  renderAlertas();initFilters();renderLineas();renderNotifs();
 }
 
 function initKpis(){
@@ -371,41 +401,47 @@ function initKpis(){
 
 function renderNewOcis(){
   const bar=document.getElementById('new-ocis-bar');
-  const nuevas=DATA.filter(r=>{
-    if(!r.sync)return false;
-    const d=dd(r.sync);
-    return d!==null&&d<=7&&d>=0;
-  });
+  const nuevas=DATA.filter(r=>r.sync&&dd(r.sync)!==null&&dd(r.sync)<=7&&dd(r.sync)>=0);
   const ocisNuevas=[...new Set(nuevas.map(r=>r.oci))];
-  if(!ocisNuevas.length){bar.innerHTML='<span style="font-size:10px;color:var(--mu)">📋 Sin OCIs nuevas esta semana</span>';return;}
-  const chips=ocisNuevas.slice(0,6).map(o=>{
+  if(!ocisNuevas.length){bar.innerHTML='<span style="font-size:10px;color:var(--mu)">📋 Sin OCIs nuevas esta semana — última sincronización SAP sin cambios recientes</span>';return;}
+  const chips=ocisNuevas.slice(0,8).map(o=>{
     const lines=nuevas.filter(r=>r.oci===o);
     const d=dd(lines[0].sync);
-    const t=lines[0].Tipo;
-    return`<div class="oci-chip"><span style="font-weight:500;color:var(--ac);font-family:monospace">${o}</span><span style="color:var(--mu)">hace ${d}d</span>${tpPill(t)}</div>`;
+    return`<div class="oci-chip"><span style="font-weight:600;color:var(--ac);font-family:monospace">${o}</span><span style="color:var(--mu)">hace ${d}d</span>${tpPill(lines[0].Tipo)}</div>`;
   }).join('');
   bar.innerHTML=`<span class="new-ocis-lbl">✨ OCIs nuevas esta semana</span>${chips}<span style="font-size:9px;color:var(--mu);margin-left:auto">${ocisNuevas.length} OCI${ocisNuevas.length>1?'s':''} · últimos 7 días</span>`;
 }
 
 function renderNotifs(){
   const al=DATA.filter(r=>r.st==='O'&&!r.com&&!r.IMP);
-  const nuevas=[...new Set(DATA.filter(r=>r.sync&&dd(r.sync)<=7&&dd(r.sync)>=0).map(r=>r.oci))];
+  const nuevas=[...new Set(DATA.filter(r=>r.sync&&dd(r.sync)!==null&&dd(r.sync)<=7&&dd(r.sync)>=0).map(r=>r.oci))];
   const ing=DATA.filter(r=>r.fEst&&inWeek(r.fEst));
   let html='';
-  if(al.length)html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(231,76,60,.15);color:var(--er)">🔔</div><div class="notif-body"><div class="notif-title">${al.length} líneas sin gestión</div><div class="notif-sub">Sin comentario ni IMP asignado</div></div><span class="notif-time">hoy</span></div>`;
-  if(nuevas.length)html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(79,142,247,.15);color:var(--ac)">➕</div><div class="notif-body"><div class="notif-title">${nuevas.length} OCIs nuevas esta semana</div><div class="notif-sub">${nuevas.slice(0,3).join(', ')}${nuevas.length>3?'...':''}</div></div><span class="notif-time">esta semana</span></div>`;
-  if(ing.length){const impIng=[...new Set(ing.filter(r=>r.IMP).map(r=>r.IMP))];html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(46,204,113,.15);color:var(--ok)">🚢</div><div class="notif-body"><div class="notif-title">${impIng.length||ing.length} IMP${impIng.length>1?'s':''} ingresan esta semana</div><div class="notif-sub">Fecha estimada +7d desde llegada</div></div><span class="notif-time">próximo</span></div>`;}
-  if(!html)html='<div style="padding:12px;font-size:10px;color:var(--mu);text-align:center">Sin notificaciones pendientes</div>';
+  if(al.length)html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(248,113,113,.12)">🔔</div><div class="notif-body"><div class="notif-title">${al.length} líneas sin gestión</div><div class="notif-sub">Sin comentario ni IMP asignado</div></div><span class="notif-time">hoy</span></div>`;
+  if(nuevas.length)html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(56,189,248,.12)">➕</div><div class="notif-body"><div class="notif-title">${nuevas.length} OCIs nuevas esta semana</div><div class="notif-sub">${nuevas.slice(0,3).join(', ')}${nuevas.length>3?'...':''}</div></div><span class="notif-time">esta semana</span></div>`;
+  if(ing.length){const impIng=[...new Set(ing.filter(r=>r.IMP).map(r=>r.IMP))];html+=`<div class="notif-item"><div class="notif-ico" style="background:rgba(52,211,153,.12)">🚢</div><div class="notif-body"><div class="notif-title">${impIng.length||ing.length} ingreso${impIng.length>1?'s':''} estimado${impIng.length>1?'s':''} esta semana</div><div class="notif-sub">Fecha estimada = llegada + 7 días</div></div><span class="notif-time">próximo</span></div>`;}
+  if(!html)html='<div style="padding:14px;font-size:11px;color:var(--mu);text-align:center">Sin notificaciones pendientes</div>';
   document.getElementById('notif-list').innerHTML=html;
 }
 
 function renderLogistic(){
-  const estados=['pendiente','en produccion','embarcado','transito','recepcionado','cerrado'];
-  const labels=['Pendiente','En producción','Embarcado','Tránsito','Recepcionado','Cerrado'];
-  const colors=['#888780','#9b59b6','#4f8ef7','#1abc9c','#2ecc71','#555'];
-  const counts=estados.map(e=>DATA.filter(r=>r.sfab&&r.sfab.toLowerCase().includes(e.split(' ')[0])).length);
-  counts[5]=DATA.filter(r=>r.st==='C').length;
-  document.getElementById('log-grid').innerHTML=labels.map((l,i)=>`<div class="log-card"><div class="log-val" style="color:${colors[i]}">${counts[i]}</div><div class="log-lbl">${l}</div><div class="log-bar" style="background:${colors[i]}"></div></div>`).join('');
+  const defs=[
+    {k:'pendiente',l:'Pendiente',c:'#fbbf24',bg:'rgba(251,191,36,.15)'},
+    {k:'en produc',l:'En producción',c:'#a78bfa',bg:'rgba(167,139,250,.15)'},
+    {k:'embar',l:'Embarcado',c:'#38bdf8',bg:'rgba(56,189,248,.15)'},
+    {k:'transito|tránsito',l:'Tránsito',c:'#2dd4bf',bg:'rgba(45,212,191,.15)'},
+    {k:'recep',l:'Recepcionado',c:'#34d399',bg:'rgba(52,211,153,.15)'},
+  ];
+  const counts=defs.map(d=>DATA.filter(r=>r.sfab&&new RegExp(d.k,'i').test(r.sfab)).length);
+  const cerrados=DATA.filter(r=>r.st==='C').length;
+  const allDefs=[...defs,{k:'cerrado',l:'Cerrado',c:'#64748b',bg:'rgba(100,116,139,.15)'}];
+  const allCounts=[...counts,cerrados];
+  document.getElementById('log-grid').innerHTML=allDefs.map((d,i)=>`
+    <div class="log-card" style="border-color:${d.c}22">
+      <div class="log-val" style="color:${d.c}">${allCounts[i]}</div>
+      <div class="log-lbl">${d.l}</div>
+      <div style="height:3px;border-radius:0 0 12px 12px;background:${d.c};position:absolute;bottom:0;left:0;right:0;opacity:.6"></div>
+    </div>`).join('');
 }
 
 function renderDist(){
@@ -414,18 +450,36 @@ function renderDist(){
   const pr=op.filter(r=>r.Tipo==='Proyecto').length;
   const tot=st+pr||1;
   document.getElementById('dist-bars').innerHTML=`
-    <div class="bar-row"><span class="bar-lbl">Stock</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(st/tot*100)}%;background:var(--wa)"></div></div><span class="bar-cnt">${st}</span></div>
-    <div class="bar-row"><span class="bar-lbl">Proyecto / empresa</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(pr/tot*100)}%;background:var(--ac)"></div></div><span class="bar-cnt">${pr}</span></div>
+    <div class="bar-row"><span class="bar-lbl">Stock</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(st/tot*100)}%;background:linear-gradient(90deg,var(--wa),#f59e0b)"></div></div><span class="bar-cnt">${st}</span></div>
+    <div class="bar-row"><span class="bar-lbl">Proyecto / empresa</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(pr/tot*100)}%;background:linear-gradient(90deg,var(--pu),var(--ac))"></div></div><span class="bar-cnt">${pr}</span></div>
     <div class="sep"></div>
-    <div class="bar-row"><span class="bar-lbl">Sin IMP asignado</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(op.filter(r=>!r.IMP).length/op.length*100):0}%;background:var(--er)"></div></div><span class="bar-cnt" style="color:var(--er)">${op.filter(r=>!r.IMP).length}</span></div>`;
-  const sfC={};
-  op.forEach(r=>{if(r.sfab)sfC[r.sfab]=(sfC[r.sfab]||0)+1;});
+    <div class="bar-row"><span class="bar-lbl">Sin IMP asignado</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(op.filter(r=>!r.IMP).length/op.length*100):0}%;background:linear-gradient(90deg,var(--er),#ef4444)"></div></div><span class="bar-cnt" style="color:var(--er)">${op.filter(r=>!r.IMP).length}</span></div>`;
+  const sfC={};op.forEach(r=>{if(r.sfab)sfC[r.sfab]=(sfC[r.sfab]||0)+1;});
   const sfH=Object.entries(sfC).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([s,n])=>{
-    const sl=s.toLowerCase();
-    const c=sl.includes('tr')?'#1abc9c':sl.includes('prod')?'#9b59b6':sl.includes('embar')?'#4f8ef7':sl.includes('recep')?'#2ecc71':'#f39c12';
+    const sl=s.toLowerCase();const c=sl.includes('tr')?'var(--te)':sl.includes('prod')?'var(--pu)':sl.includes('embar')?'var(--ac)':sl.includes('recep')?'var(--ok)':'var(--wa)';
     return`<div class="bar-row"><span class="bar-lbl">${s}</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(n/op.length*100):0}%;background:${c}"></div></div><span class="bar-cnt">${n}</span></div>`;
-  }).join('')+`<div class="bar-row"><span class="bar-lbl">Sin estado</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(op.filter(r=>!r.sfab).length/op.length*100):0}%;background:var(--bd)"></div></div><span class="bar-cnt" style="color:var(--mu)">${op.filter(r=>!r.sfab).length}</span></div>`;
+  }).join('')+`<div class="bar-row"><span class="bar-lbl">Sin estado</span><div class="bar-track"><div class="bar-fill" style="width:${op.length?Math.round(op.filter(r=>!r.sfab).length/op.length*100):0}%;background:var(--mu)"></div></div><span class="bar-cnt" style="color:var(--mu)">${op.filter(r=>!r.sfab).length}</span></div>`;
   document.getElementById('sfab-bars').innerHTML=sfH;
+}
+
+function ociBlock(oci,lines,pid){
+  const sid=`o_${pid}_${oci.replace(/[^a-zA-Z0-9]/g,'_')}`;
+  const opL=lines.filter(r=>r.st==='O').length;
+  const clL=lines.filter(r=>r.st==='C').length;
+  const isNew=lines.some(r=>r.sync&&dd(r.sync)!==null&&dd(r.sync)<=7&&dd(r.sync)>=0);
+  const t=[...new Set(lines.map(r=>r.Tipo))];
+  return`<div class="oci-sec"><div class="oci-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="oci-name">${oci}</span><div class="oci-meta"><span class="cbadge">${lines.length} ítems</span>${t.map(x=>tpPill(x)).join('')}${isNew?'<span class="pill p-new">nueva</span>':''}${opL?`<span style="color:var(--ac)">${opL} abiertas</span>`:''}${clL?`<span style="color:var(--ok)">${clL} cerradas</span>`:''}</div></div><div class="oci-body" id="${sid}"><table class="itbl"><thead><tr><th>id_linea</th><th>Código SAP</th><th>Descripción</th><th>Estado</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody>${lines.map(r=>`<tr><td style="font-family:monospace">${r.id}</td><td>${r.sap}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc||'—'}</td><td>${stPill(r.st)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--mu);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.com||'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+
+function impBlock(imp,isCer){
+  const lines=DATA.filter(r=>r.IMP===imp);
+  const clL=lines.filter(r=>r.st==='C').length;
+  const pct=lines.length?Math.round(clL/lines.length*100):0;
+  const tipos=[...new Set(lines.map(r=>r.Tipo))];
+  const hasAl=lines.some(r=>r.st==='O'&&!r.com);
+  const sid=`i_${imp.replace(/[^a-zA-Z0-9]/g,'_')}`;
+  const ocis=[...new Set(lines.map(r=>r.oci))];
+  return`<div class="imp-row"><div class="imp-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="imp-name" style="${isCer?'color:var(--mu)':'color:var(--tx)'}">${imp}</span><div class="imp-meta"><span class="cbadge">${lines.length} líneas</span><span class="cbadge">${ocis.length} OCIs</span>${isCer?'<span class="pill p-closed">Cerrado</span>':'<span class="pill p-open">Activo</span>'}${tipos.map(t=>tpPill(t)).join('')}${hasAl&&!isCer?'<span class="pill p-alert">Alerta</span>':''}<div class="pmini"><div class="pmini-fill" style="width:${pct}%;background:${isCer?'var(--ok)':'var(--ac)'}"></div></div><span style="font-size:9px;color:var(--mu)">${clL}/${lines.length}</span></div></div><div class="imp-body" id="${sid}">${ocis.map(o=>ociBlock(o,lines.filter(r=>r.oci===o),sid)).join('')}</div></div>`;
 }
 
 function renderImpList(){
@@ -434,37 +488,15 @@ function renderImpList(){
   const cer=allI.filter(i=>impSt(i)==='cerrado');
   const sinI=DATA.filter(r=>r.st==='O'&&!r.IMP);
   const filt=impFiltro==='activos'?act:impFiltro==='cerrados'?cer:allI;
-
-  function ociBlock(oci,lines,impId){
-    const sid=`oci_${impId}_${oci.replace(/[^a-zA-Z0-9]/g,'_')}`;
-    const opL=lines.filter(r=>r.st==='O').length;
-    const clL=lines.filter(r=>r.st==='C').length;
-    const isNew=lines.some(r=>r.sync&&dd(r.sync)<=7&&dd(r.sync)>=0);
-    const t=[...new Set(lines.map(r=>r.Tipo))];
-    return`<div class="oci-sec"><div class="oci-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="oci-name">${oci}</span><div class="oci-meta"><span class="cbadge">${lines.length} ítems</span>${t.map(x=>tpPill(x)).join('')}${isNew?'<span class="pill p-new">nueva</span>':''}${opL?`<span style="color:var(--ac)">${opL} abiertas</span>`:''}${clL?`<span style="color:var(--ok)">${clL} cerradas</span>`:''}</div></div><div class="oci-body" id="${sid}"><table class="itbl"><thead><tr><th>id_linea</th><th>Código SAP</th><th>Descripción</th><th>Estado</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody>${lines.map(r=>`<tr><td style="font-family:monospace">${r.id}</td><td>${r.sap}</td><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc||'—'}</td><td>${stPill(r.st)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--mu);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.com||'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
-  }
-
-  function impBlock(imp,isCer){
-    const lines=DATA.filter(r=>r.IMP===imp);
-    const clL=lines.filter(r=>r.st==='C').length;
-    const pct=lines.length?Math.round(clL/lines.length*100):0;
-    const tipos=[...new Set(lines.map(r=>r.Tipo))];
-    const hasAl=lines.some(r=>r.st==='O'&&!r.com);
-    const sid=`imp_${imp.replace(/[^a-zA-Z0-9]/g,'_')}`;
-    const ocis=[...new Set(lines.map(r=>r.oci))];
-    return`<div class="imp-row"><div class="imp-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="imp-name" style="${isCer?'opacity:.6':''}">${imp}</span><div class="imp-meta"><span class="cbadge">${lines.length} líneas</span><span class="cbadge">${ocis.length} OCIs</span>${isCer?'<span class="pill p-closed">Cerrado</span>':'<span class="pill p-open">Activo</span>'}${tipos.map(t=>tpPill(t)).join('')}${hasAl&&!isCer?'<span class="pill p-alert">Alerta</span>':''}<div class="pmini"><div class="pmini-fill" style="width:${pct}%;background:${isCer?'var(--ok)':'var(--ac)'}"></div></div><span style="font-size:9px;color:var(--mu)">${clL}/${lines.length}</span></div></div><div class="imp-body" id="${sid}">${ocis.map(o=>ociBlock(o,lines.filter(r=>r.oci===o),sid)).join('')}</div></div>`;
-  }
-
   let html='';
   if(impFiltro==='todos'&&act.length){
-    html+=`<div style="font-size:10px;color:var(--mu);padding:4px 0 4px;font-weight:500">◉ Activos (${act.length})</div>`+act.map(i=>impBlock(i,false)).join('');
-    if(cer.length)html+=`<div style="font-size:10px;color:var(--mu);padding:8px 0 4px;font-weight:500">🗂 Cerrados (${cer.length})</div>`+cer.map(i=>impBlock(i,true)).join('');
+    html+=`<div style="font-size:10px;color:var(--ac);padding:4px 0 6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">● Activos (${act.length})</div>`+act.map(i=>impBlock(i,false)).join('');
+    if(cer.length)html+=`<div style="font-size:10px;color:var(--mu);padding:10px 0 6px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">○ Cerrados / historial (${cer.length})</div>`+cer.map(i=>impBlock(i,true)).join('');
   }else{html+=filt.map(i=>impBlock(i,impSt(i)==='cerrado')).join('');}
-
   if(impFiltro==='activos'&&sinI.length){
-    const sid='imp_sin';
+    const sid='i_sin';
     const ocis=[...new Set(sinI.map(r=>r.oci))];
-    html+=`<div class="imp-row" style="margin-top:4px"><div class="imp-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="imp-name" style="color:var(--er)">Sin IMP</span><div class="imp-meta"><span class="cbadge">${sinI.length} líneas</span><span class="cbadge">${ocis.length} OCIs</span><span class="pill p-alert">Pendiente asignación</span></div></div><div class="imp-body" id="${sid}">${ocis.map(o=>ociBlock(o,sinI.filter(r=>r.oci===o),sid)).join('')}</div></div>`;
+    html+=`<div class="imp-row" style="margin-top:4px;border-color:rgba(248,113,113,.3)"><div class="imp-hdr" onclick="toggleEl('${sid}')"><span class="chev" id="c${sid}">▶</span><span class="imp-name" style="color:var(--er)">Sin IMP</span><div class="imp-meta"><span class="cbadge">${sinI.length} líneas</span><span class="cbadge">${ocis.length} OCIs</span><span class="pill p-alert">Pendiente asignación</span></div></div><div class="imp-body" id="${sid}">${ocis.map(o=>ociBlock(o,sinI.filter(r=>r.oci===o),sid)).join('')}</div></div>`;
   }
   if(!html)html='<div class="empty">Sin registros para este filtro</div>';
   document.getElementById('imp-list').innerHTML=html;
@@ -472,28 +504,42 @@ function renderImpList(){
 
 function renderLlegadas(){
   const conF=DATA.filter(r=>r.fll&&!r.ing).sort((a,b)=>new Date(a.fll)-new Date(b.fll));
-  const week=conF.filter(r=>r.fEst&&inWeek(r.fEst));
-  const month=conF.filter(r=>r.fEst&&inMonth(r.fEst)&&!inWeek(r.fEst));
 
-  function llegBlock(r,sid){
-    const lines=DATA.filter(x=>x.IMP===r.IMP&&x.fll===r.fll);
-    const itemsHtml=lines.slice(0,10).map(x=>`<tr><td style="font-family:monospace;padding-left:6px">${x.id}</td><td>${x.desc||'—'}</td><td>${sfPill(x.sfab)}</td></tr>`).join('');
-    return`<div class="llegada-item ${sid==='w'?'llegada-week':'llegada-month'}" onclick="toggleEl('ll_${r.IMP||r.id}')"><div class="llegada-row"><span style="font-family:monospace;font-weight:500">${r.IMP||r.oci}</span><span style="font-weight:500;color:${sid==='w'?'var(--ok)':'var(--ac)'}">${fd(r.fEst)}</span></div><div class="llegada-sub">Puerto: ${fd(r.fll)} · estimado ingreso: +7d · ${lines.length} ítem${lines.length>1?'s':''}</div></div><div class="llegada-body" id="ll_${r.IMP||r.id}"><table class="itbl" style="font-size:9px"><thead><tr><th style="padding-left:6px">id_linea</th><th>Descripción</th><th>Fábrica</th></tr></thead><tbody>${itemsHtml}</tbody></table></div>`;
+  function impLlegBlock(imp,tipo){
+    const lines=conF.filter(r=>(r.IMP||r.oci)===imp);
+    if(!lines.length)return'';
+    const rep=lines[0];
+    const sid=`ll_${tipo}_${imp.replace(/[^a-zA-Z0-9]/g,'_')}`;
+    const ocis=[...new Set(lines.map(r=>r.oci))];
+    const colorClass=tipo==='w'?'llegada-week':'llegada-month';
+    const color=tipo==='w'?'var(--ok)':'var(--ac)';
+    return`<div class="${colorClass} llegada-item" onclick="toggleEl('${sid}')">
+      <div class="llegada-row"><span style="font-family:monospace;font-weight:600">${imp}</span><span style="font-weight:600;color:${color}">${fd(rep.fEst)}</span></div>
+      <div class="llegada-sub">Puerto: ${fd(rep.fll)} · estimado ingreso: +7d · ${lines.length} línea${lines.length>1?'s':''} en ${ocis.length} OCI${ocis.length>1?'s':''}</div>
+      <div class="llegada-body" id="${sid}">
+        ${ocis.map(o=>{
+          const oLines=lines.filter(r=>r.oci===o);
+          const osid=`llo_${tipo}_${imp.replace(/[^a-zA-Z0-9]/g,'_')}_${o.replace(/[^a-zA-Z0-9]/g,'_')}`;
+          return`<div style="margin-bottom:6px"><div style="font-size:10px;font-weight:600;color:var(--ac);font-family:monospace;padding:4px 0;cursor:pointer" onclick="event.stopPropagation();toggleEl('${osid}')">${o} — ${oLines.length} ítem${oLines.length>1?'s':''} <span class="chev" id="c${osid}">▶</span></div>
+          <div id="${osid}" style="display:none"><table class="itbl" style="font-size:9px"><thead><tr><th style="padding-left:8px">id_linea</th><th>Descripción</th><th>Fábrica</th><th>Comentario</th></tr></thead><tbody>${oLines.map(x=>`<tr><td style="font-family:monospace;padding-left:8px">${x.id}</td><td>${x.desc||'—'}</td><td>${sfPill(x.sfab)}</td><td style="color:var(--mu)">${x.com||'—'}</td></tr>`).join('')}</tbody></table></div></div>`;
+        }).join('')}
+      </div>
+    </div>`;
   }
 
-  const weekImps=[...new Set(week.map(r=>r.IMP||r.oci))];
-  const monthImps=[...new Set(month.map(r=>r.IMP||r.oci))];
-  document.getElementById('lleg-week').innerHTML=weekImps.length?weekImps.map(i=>{const r=week.find(x=>(x.IMP||x.oci)===i);return llegBlock(r,'w');}).join(''):'<div class="empty">Sin ingresos estimados esta semana</div>';
-  document.getElementById('lleg-month').innerHTML=monthImps.length?monthImps.map(i=>{const r=month.find(x=>(x.IMP||x.oci)===i);return llegBlock(r,'m');}).join(''):'<div class="empty">Sin ingresos estimados este mes</div>';
-  document.getElementById('tbody-lleg').innerHTML=conF.map(r=>`<tr><td style="color:var(--ac)">${r.IMP||'—'}</td><td>${r.oci}</td><td>${tpPill(r.Tipo)}</td><td>${fd(r.fll)}</td><td style="font-weight:500;color:${inWeek(r.fEst)?'var(--ok)':inMonth(r.fEst)?'var(--ac)':'var(--tx)'}">${fd(r.fEst)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--mu)">${r.com||'—'}</td></tr>`).join('');
+  const weekImps=[...new Set(conF.filter(r=>r.fEst&&inWeek(r.fEst)).map(r=>r.IMP||r.oci))];
+  const monthImps=[...new Set(conF.filter(r=>r.fEst&&inMonth(r.fEst)&&!inWeek(r.fEst)).map(r=>r.IMP||r.oci))];
+  document.getElementById('lleg-week').innerHTML=weekImps.length?weekImps.map(i=>impLlegBlock(i,'w')).join(''):'<div class="empty">Sin ingresos estimados esta semana</div>';
+  document.getElementById('lleg-month').innerHTML=monthImps.length?monthImps.map(i=>impLlegBlock(i,'m')).join(''):'<div class="empty">Sin ingresos estimados este mes</div>';
+  document.getElementById('tbody-lleg').innerHTML=conF.map(r=>`<tr><td style="color:var(--ac)">${r.IMP||'—'}</td><td>${r.oci}</td><td>${tpPill(r.Tipo)}</td><td>${fd(r.fll)}</td><td style="font-weight:600;color:${inWeek(r.fEst)?'var(--ok)':inMonth(r.fEst)?'var(--ac)':'var(--tx)'}">${fd(r.fEst)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--mu)">${r.com||'—'}</td></tr>`).join('');
 }
 
 function renderAlertas(){
   const sg=DATA.filter(r=>r.st==='O'&&!r.com&&!r.IMP).sort((a,b)=>(dd(b.fupd)||0)-(dd(a.fupd)||0));
   const sf=DATA.filter(r=>r.st==='O'&&!r.fll);
-  document.getElementById('alert-list').innerHTML=sg.slice(0,5).map(r=>{const d=dd(r.fupd);const c=d>=10?'var(--er)':'var(--wa)';return`<div class="alert-item"><div class="alert-dot" style="background:${c}"></div><div class="alert-info"><div class="alert-id">${r.id}</div><div class="alert-reason">OCI ${r.oci} · ${tpPill(r.Tipo)} · ${r.prior?r.prior.substring(0,40):'—'}</div></div><span style="font-size:10px;font-weight:500;color:${c}">${d!==null?d+'d':'—'}</span></div>`;}).join('')||'<div class="empty">Sin alertas activas</div>';
-  document.getElementById('alert-more').textContent=sg.length>5?`Ver todas (${sg.length}) ↗`:'';
-  document.getElementById('alert-nodate').innerHTML=sf.slice(0,5).map(r=>`<div class="alert-item"><div class="alert-dot" style="background:var(--wa)"></div><div class="alert-info"><div class="alert-id">${r.id}</div><div class="alert-reason">OCI ${r.oci} · ${r.IMP||'sin IMP'}</div></div><span class="pill p-pend">Sin fecha</span></div>`).join('')||'<div class="empty">Todas tienen fecha asignada</div>';
+  document.getElementById('alert-list').innerHTML=sg.slice(0,6).map(r=>{const d=dd(r.fupd);const c=d>=10?'var(--er)':'var(--wa)';return`<div class="alert-item"><div class="alert-dot" style="background:${c}"></div><div class="alert-info"><div class="alert-id">${r.id}</div><div class="alert-reason">OCI ${r.oci} · ${tpPill(r.Tipo)} · ${r.prior?r.prior.substring(0,45)+'...':'—'}</div></div><span style="font-size:10px;font-weight:600;color:${c}">${d!==null?d+'d':'—'}</span></div>`;}).join('')||'<div class="empty">Sin alertas activas</div>';
+  document.getElementById('alert-more').textContent=sg.length>6?`Ver todas las alertas (${sg.length}) ↗`:'';
+  document.getElementById('alert-nodate').innerHTML=sf.slice(0,5).map(r=>`<div class="alert-item"><div class="alert-dot" style="background:var(--wa)"></div><div class="alert-info"><div class="alert-id">${r.id}</div><div class="alert-reason">OCI ${r.oci} · ${r.IMP||'sin IMP'} · ${sfPill(r.sfab)}</div></div><span class="pill p-pend">Sin fecha</span></div>`).join('')||'<div class="empty">Todas tienen fecha asignada</div>';
 }
 
 function initFilters(){
@@ -509,18 +555,64 @@ function renderLineas(){
   const fi=document.getElementById('f-im').value;
   const ff=document.getElementById('f-sf').value;
   const rows=DATA.filter(r=>(!fs||r.st===fs)&&(!ft||r.Tipo===ft)&&(!fi||r.IMP===fi)&&(!ff||r.sfab===ff));
-  document.getElementById('tbody-lin').innerHTML=rows.map(r=>`<tr><td style="font-family:monospace;font-size:9px">${r.id}</td><td>${r.oci}</td><td>${r.prov}</td><td>${tpPill(r.Tipo)}</td><td>${stPill(r.st)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--ac);font-size:9px">${r.IMP||'—'}</td><td style="font-size:9px">${fd(r.fll)}</td><td style="font-size:9px;font-weight:500">${fd(r.fEst)}</td><td>${alPill(r)}</td><td style="color:var(--mu)">${r.com||'—'}</td></tr>`).join('');
+  document.getElementById('tbody-lin').innerHTML=rows.map(r=>`<tr id="row_${r.id.replace(/[^a-zA-Z0-9]/g,'_')}"><td style="font-family:monospace;font-size:9px">${r.id}</td><td>${r.oci}</td><td>${r.prov}</td><td>${tpPill(r.Tipo)}</td><td>${stPill(r.st)}</td><td>${sfPill(r.sfab)}</td><td style="color:var(--ac);font-size:9px">${r.IMP||'—'}</td><td style="font-size:9px">${fd(r.fll)}</td><td style="font-size:9px;font-weight:600;color:${r.fEst?inWeek(r.fEst)?'var(--ok)':'var(--ac)':'var(--mu)'}">${fd(r.fEst)}</td><td>${alPill(r)}</td><td style="color:var(--mu)">${r.com||'—'}</td></tr>`).join('');
   const cl=DATA.filter(r=>r.st==='C').length;
   const pct=DATA.length?Math.round(cl/DATA.length*100):0;
-  document.getElementById('lcount').textContent=`${rows.length} líneas`;
+  document.getElementById('lcount').textContent=`${rows.length} líneas mostradas`;
   document.getElementById('lprog').style.width=pct+'%';
   document.getElementById('lpct').textContent=`${pct}% cerradas`;
+}
+
+function handleSearch(){
+  const q=document.getElementById('search-input').value.trim();
+  const res=document.getElementById('search-results');
+  const cnt=document.getElementById('search-count');
+  const clr=document.getElementById('search-clear');
+  if(q.length<3){res.style.display='none';cnt.textContent='';clr.style.display='none';return;}
+  clr.style.display='block';
+  const matches=DATA.filter(r=>{
+    const sap=(r.sap||'').replace(/[^0-9]/g,'');
+    const prod=r.cprod;
+    return sap.includes(q)||prod.includes(q);
+  });
+  cnt.textContent=matches.length?` ${matches.length} resultado(s)`:'';
+  if(!matches.length){res.style.display='block';res.innerHTML=`<div style="padding:14px;font-size:11px;color:var(--mu);text-align:center">Sin resultados para "${q}"</div>`;return;}
+  res.style.display='block';
+  const hi=v=>v.replace(new RegExp(`(${q})`,'gi'),'<mark style="background:rgba(56,189,248,.25);color:var(--ac);border-radius:2px">$1</mark>');
+  res.innerHTML=matches.slice(0,20).map(r=>{
+    const sap=(r.sap||'').replace(/[^0-9]/g,'');
+    return`<div class="sr-item" onclick="goToLine('${r.id.replace(/'/g,"\\'")}','${r.IMP}','${r.oci}')"><span class="sr-badge">${hi(sap)}</span><div class="sr-info"><div class="sr-id">${r.id}</div><div class="sr-meta">${r.oci} · ${r.Tipo} · ${r.sfab||'sin estado'} · ${r.desc?r.desc.substring(0,40)+'...':''}</div></div><span class="sr-imp">${r.IMP||'sin IMP'}</span></div>`;
+  }).join('')+(matches.length>20?`<div style="padding:10px;font-size:10px;color:var(--mu);text-align:center">Mostrando 20 de ${matches.length} resultados</div>`:'');
+}
+
+function clearSearch(){
+  document.getElementById('search-input').value='';
+  document.getElementById('search-results').style.display='none';
+  document.getElementById('search-count').textContent='';
+  document.getElementById('search-clear').style.display='none';
+}
+
+function goToLine(id,imp,oci){
+  clearSearch();
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.remove('active');if(i===3)el.classList.add('active');});
+  document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));
+  document.getElementById('panel-lineas').classList.add('active');
+  setTimeout(()=>{
+    const safeId='row_'+id.replace(/[^a-zA-Z0-9]/g,'_');
+    const row=document.getElementById(safeId);
+    if(row){row.classList.add('hl-row');row.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>row.classList.remove('hl-row'),2000);}
+  },150);
 }
 
 function toggleEl(id){
   const b=document.getElementById(id);
   const c=document.getElementById('c'+id);
-  if(b){b.classList.toggle('open');if(c)c.textContent=b.classList.contains('open')?'▼':'▶';}
+  if(b){
+    const isOpen=b.classList.contains('open')||b.style.display==='block';
+    if(b.classList.contains('oci-body')||b.classList.contains('imp-body')){b.classList.toggle('open');}
+    else{b.style.display=isOpen?'none':'block';}
+    if(c)c.textContent=(b.classList.contains('open')||b.style.display==='block')?'▼':'▶';
+  }
 }
 function setTab(t,e){
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
@@ -528,12 +620,7 @@ function setTab(t,e){
   e.target.classList.add('active');
   document.getElementById('panel-'+t).classList.add('active');
 }
-function setTgl(f,el){
-  impFiltro=f;
-  document.querySelectorAll('.tgl').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  renderImpList();
-}
+function setTgl(f,el){impFiltro=f;document.querySelectorAll('.tgl').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderImpList();}
 function toggleNotif(){document.getElementById('np').classList.toggle('open');}
 document.addEventListener('click',e=>{const nw=document.getElementById('nw');if(nw&&!nw.contains(e.target))document.getElementById('np').classList.remove('open');});
 
