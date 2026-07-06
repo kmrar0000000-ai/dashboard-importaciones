@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Importaciones — Interamsa</title>
-<script src="msal-browser.min.js"></script>
+<script src="msal-browser.min.js">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -282,7 +282,7 @@ const msalConfig = {
 };
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
-const scopes = ['https://interamsa.sharepoint.com/AllSites.Read'];
+const scopes = ['https://interamsa.sharepoint.com/.default'];
 
 let DATA = [];
 let impFiltro = 'activos';
@@ -344,8 +344,13 @@ async function login(){
 
 async function getToken(){
   const account = msalInstance.getActiveAccount();
-  const result = await msalInstance.acquireTokenSilent({ scopes, account });
-  return result.accessToken;
+  try {
+    const result = await msalInstance.acquireTokenSilent({ scopes, account });
+    return result.accessToken;
+  } catch(e) {
+    const result = await msalInstance.acquireTokenPopup({ scopes });
+    return result.accessToken;
+  }
 }
 
 async function fetchAll(){
