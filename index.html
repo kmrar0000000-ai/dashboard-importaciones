@@ -282,7 +282,7 @@ const msalConfig = {
 };
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
-const scopes = ['https://interamsa.sharepoint.com/.default'];
+const scopes = ['https://interamsa.sharepoint.com/AllSites.Read'];
 
 let DATA = [];
 let impFiltro = 'activos';
@@ -332,7 +332,7 @@ async function login(){
       document.getElementById('user-name').textContent = accounts[0].name || accounts[0].username;
       return true;
     }
-    const result = await msalInstance.loginPopup({ scopes });
+    const result = await msalInstance.loginPopup({ scopes, prompt: 'consent' });
     msalInstance.setActiveAccount(result.account);
     document.getElementById('user-name').textContent = result.account.name || result.account.username;
     return true;
