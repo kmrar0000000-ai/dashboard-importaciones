@@ -278,7 +278,7 @@ const msalConfig = {
     authority: `https://login.microsoftonline.com/${TENANT_ID}`,
     redirectUri: window.location.href.split('?')[0]
   },
-  cache: { cacheLocation: 'sessionStorage' }
+  cache: { cacheLocation: 'localStorage' }
 };
 
 const msalInstance = new msal.PublicClientApplication(msalConfig);
@@ -326,18 +326,28 @@ function alertPill(r){
 async function login(){
   try {
     await msalInstance.initialize();
+    
+    // Manejar respuesta de redirect primero
+    const response = await msalInstance.handleRedirectPromise();
+    if(response){
+      msalInstance.setActiveAccount(response.account);
+      document.getElementById('user-name').textContent = response.account.name || response.account.username;
+      return true;
+    }
+    
     const accounts = msalInstance.getAllAccounts();
     if(accounts.length > 0){
       msalInstance.setActiveAccount(accounts[0]);
       document.getElementById('user-name').textContent = accounts[0].name || accounts[0].username;
       return true;
     }
-    const result = await msalInstance.loginPopup({ scopes, prompt: 'consent' });
-    msalInstance.setActiveAccount(result.account);
-    document.getElementById('user-name').textContent = result.account.name || result.account.username;
-    return true;
+    
+    // Usar redirect en vez de popup
+    await msalInstance.loginRedirect({ scopes, prompt: 'consent' });
+    return false;
   } catch(e){
-    console.error(e);
+    console.error('Login error:', e);
+    document.getElementById('loader-msg').textContent = 'Error: ' + e.message;
     return false;
   }
 }
@@ -348,8 +358,8 @@ async function getToken(){
     const result = await msalInstance.acquireTokenSilent({ scopes, account });
     return result.accessToken;
   } catch(e) {
-    const result = await msalInstance.acquireTokenPopup({ scopes });
-    return result.accessToken;
+    await msalInstance.acquireTokenRedirect({ scopes });
+    return null;
   }
 }
 
