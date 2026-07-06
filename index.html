@@ -320,7 +320,7 @@ async function loadData(){
   try{
     sl('Obteniendo token...');const tok=await getToken();if(!tok)return;
     sl('Conectando a SharePoint...');sd('Cargando registros...');
-    const url=SITE+'/_api/web/lists/getbytitle(\''+LIST+'\')/items?=5000&='+FIELDS;
+    const url=SITE+'/_api/web/lists/getbytitle(\''+LIST+'\')/items?$top=5000&$select='+FIELDS;
     const res=await fetch(url,{headers:{Authorization:'Bearer '+tok,Accept:'application/json;odata=nometadata'}});
     if(!res.ok){const t=await res.text();sl('Error '+res.status);sd(t.substring(0,200));return;}
     const json=await res.json();RAW=json.value||[];
