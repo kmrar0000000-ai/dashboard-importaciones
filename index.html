@@ -329,6 +329,8 @@ async function loadData(){
     render();
     document.getElementById('loader').style.display='none';
     document.getElementById('app').style.display='block';
+    requestNotifPermission();
+    checkAndNotify();
   }catch(e){sl('Error');sd(e.message);console.error(e);}
 }
 function mapData(){
@@ -517,6 +519,71 @@ function toggleEl(id){
 }
 function setTab(t,e){document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));document.querySelectorAll('.panel').forEach(el=>el.classList.remove('active'));e.target.classList.add('active');document.getElementById('panel-'+t).classList.add('active');}
 function setTgl(f,el){impFiltro=f;document.querySelectorAll('.tgl').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderImpList();}
+
+let lastAlertCount = -1;
+let lastAlertIds = new Set();
+
+function requestNotifPermission(){
+  if('Notification' in window && Notification.permission === 'default'){
+    Notification.requestPermission();
+  }
+}
+
+function sendNotification(title, body, onClick){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+  const n = new Notification(title, {
+    body: body,
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%231565c0"/><text y=".9em" font-size="80" x="10">📦</text></svg>',
+    badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="20" fill="%231565c0"/></svg>',
+    tag: 'importaciones-alert',
+    requireInteraction: false
+  });
+  n.onclick = function(){
+    window.focus();
+    if(onClick) onClick();
+    n.close();
+  };
+  setTimeout(() => n.close(), 8000);
+}
+
+function checkAndNotify(){
+  const alerts = DATA.filter(r => r.st === 'O' && !r.com && !r.IMP);
+  const currentIds = new Set(alerts.map(r => r.id));
+  
+  // Find truly new alerts (not seen before)
+  const newAlerts = alerts.filter(r => !lastAlertIds.has(r.id));
+  
+  if(lastAlertCount === -1){
+    // First load - notify if there are any alerts
+    if(alerts.length > 0){
+      sendNotification(
+        '🔔 ' + alerts.length + ' líneas sin gestión',
+        'Sin comentario ni IMP asignado. Haz clic para ver el detalle.',
+        () => {
+          document.querySelectorAll('.tab').forEach((el,i) => { el.classList.remove('active'); if(i===2) el.classList.add('active'); });
+          document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+          document.getElementById('panel-alertas').classList.add('active');
+        }
+      );
+    }
+  } else if(newAlerts.length > 0){
+    // Subsequent loads - only notify if there are NEW alerts
+    sendNotification(
+      '🔔 ' + newAlerts.length + ' alerta' + (newAlerts.length > 1 ? 's' : '') + ' nueva' + (newAlerts.length > 1 ? 's' : ''),
+      newAlerts.slice(0, 2).map(r => r.oci + ' · ' + r.Tipo).join('\n') + (newAlerts.length > 2 ? '\n...' : ''),
+      () => {
+        document.querySelectorAll('.tab').forEach((el,i) => { el.classList.remove('active'); if(i===2) el.classList.add('active'); });
+        document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+        document.getElementById('panel-alertas').classList.add('active');
+      }
+    );
+  }
+  
+  lastAlertCount = alerts.length;
+  lastAlertIds = currentIds;
+}
+
 function toggleNotif(){document.getElementById('np').classList.toggle('open');}
 document.addEventListener('click',e=>{const nw=document.getElementById('nw');if(nw&&!nw.contains(e.target))document.getElementById('np').classList.remove('open');});
 init();
