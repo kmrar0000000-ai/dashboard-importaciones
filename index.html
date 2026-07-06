@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Importaciones — Interamsa</title>
-<script src="msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -380,8 +380,26 @@ async function fetchAll(){
 async function loadData(){
   document.getElementById('loader-msg').textContent = 'Cargando datos...';
   try {
-    const raw = await fetchAll();
-    DATA = raw.map(r => ({
+    const token = await getToken();
+    if(!token){ 
+      document.getElementById('loader-msg').textContent = 'Obteniendo permisos...';
+      return;
+    }
+    document.getElementById('loader-msg').textContent = 'Conectando a SharePoint...';
+    const url = `${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=100`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json;odata=nometadata' }});
+    document.getElementById('loader-msg').textContent = 'Status: ' + res.status;
+    if(!res.ok){
+      const txt = await res.text();
+      document.getElementById('loader-msg').textContent = 'Error ' + res.status + ': ' + txt.substring(0,100);
+      return;
+    }
+    const data = await res.json();
+    document.getElementById('loader-msg').textContent = 'Items: ' + (data.value ? data.value.length : 'sin value');
+  } catch(e){
+    document.getElementById('loader-msg').textContent = 'Error: ' + e.message;
+  }
+}
       id_linea: r.id_linea || '',
       nro_oci: r.nro_oci || '',
       codigo_sap: r.codigo_sap || '',
