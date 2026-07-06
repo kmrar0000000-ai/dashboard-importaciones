@@ -1,1 +1,658 @@
-<h1>Dashboard Importaciones</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Importaciones — Interamsa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-authentication-library-for-js/2.38.0/msal-browser.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#232636;--border:#2e3248;
+  --text:#e8eaf0;--muted:#7b82a0;--accent:#4f8ef7;--success:#2ecc71;
+  --danger:#e74c3c;--warning:#f39c12;--purple:#9b59b6;--teal:#1abc9c;
+  --radius:8px;--font:'Segoe UI',system-ui,sans-serif
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px}
+.loader-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader p{color:var(--muted);font-size:14px}
+.login-btn{background:var(--accent);color:#fff;border:none;padding:12px 24px;border-radius:var(--radius);cursor:pointer;font-size:14px;font-weight:500}
+.login-btn:hover{opacity:.9}
+#app{display:none;padding:16px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.topbar h1{font-size:16px;font-weight:500;display:flex;align-items:center;gap:8px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-badge{font-size:11px;color:var(--muted);background:var(--surface2);padding:4px 10px;border-radius:20px}
+.refresh-btn{background:var(--surface2);border:0.5px solid var(--border);color:var(--text);padding:6px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px}
+.refresh-btn:hover{background:var(--border)}
+.last-update{font-size:10px;color:var(--muted)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.kpi{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.kpi-ico{font-size:18px;margin-bottom:6px}
+.kpi-val{font-size:22px;font-weight:500;line-height:1;margin-bottom:2px}
+.kpi-lbl{font-size:10px;color:var(--muted)}
+.kpi-sub{font-size:10px;margin-top:3px;color:var(--muted)}
+.tabs{display:flex;gap:2px;margin-bottom:12px;background:var(--surface);border-radius:var(--radius);padding:4px}
+.tab{padding:7px 16px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;border:none;background:none}
+.tab.active{background:var(--surface2);color:var(--text);font-weight:500}
+.panel{display:none}.panel.active{display:block}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.card-title{font-size:12px;font-weight:500;color:var(--muted);margin-bottom:10px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.bar-lbl{font-size:11px;min-width:100px;color:var(--text)}
+.bar-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.bar-cnt{font-size:11px;min-width:20px;text-align:right;color:var(--muted)}
+.imp-row{border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:6px}
+.imp-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;background:var(--surface);transition:background .12s;user-select:none}
+.imp-hdr:hover{background:var(--surface2)}
+.imp-name{font-size:12px;font-weight:500;min-width:80px}
+.imp-meta{display:flex;gap:6px;flex:1;flex-wrap:wrap;align-items:center}
+.imp-body{display:none;border-top:0.5px solid var(--border)}
+.imp-body.open{display:block}
+.imp-sub-table{width:100%;border-collapse:collapse;font-size:10px}
+.imp-sub-table th{padding:5px 10px;text-align:left;color:var(--muted);background:var(--surface2);font-weight:500;font-size:9px}
+.imp-sub-table td{padding:5px 10px;border-top:0.5px solid var(--border);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.imp-sub-table tr:hover td{background:var(--surface2)}
+.pill{display:inline-block;font-size:9px;padding:2px 6px;border-radius:5px;font-weight:500;white-space:nowrap}
+.p-open{background:rgba(79,142,247,.15);color:#4f8ef7}
+.p-closed{background:rgba(46,204,113,.15);color:#2ecc71}
+.p-stock{background:rgba(243,156,18,.15);color:#f39c12}
+.p-proj{background:rgba(79,142,247,.15);color:#4f8ef7}
+.p-transit{background:rgba(26,188,156,.15);color:#1abc9c}
+.p-prod{background:rgba(155,89,182,.15);color:#9b59b6}
+.p-pend{background:rgba(243,156,18,.15);color:#f39c12}
+.p-alert{background:rgba(231,76,60,.15);color:#e74c3c}
+.p-nodate{background:rgba(127,130,160,.15);color:#7b82a0}
+.chevron{transition:transform .2s;color:var(--muted);font-size:12px}
+.chevron.open{transform:rotate(90deg)}
+.count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:9px;background:var(--surface2);border:0.5px solid var(--border);font-size:10px;color:var(--muted);padding:0 5px}
+.prog-mini{flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;min-width:50px}
+.prog-mini-fill{height:100%;border-radius:2px}
+.tgl-group{display:flex;gap:4px;margin-bottom:12px}
+.tgl{font-size:11px;padding:5px 12px;border-radius:var(--radius);cursor:pointer;border:0.5px solid var(--border);background:var(--surface2);color:var(--muted);transition:all .15s}
+.tgl.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.main-table{width:100%;border-collapse:collapse;font-size:10px}
+.main-table th{padding:6px 8px;text-align:left;color:var(--muted);border-bottom:0.5px solid var(--border);font-size:9px;white-space:nowrap;font-weight:500}
+.main-table td{padding:6px 8px;border-bottom:0.5px solid var(--border);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
+.main-table tr:last-child td{border-bottom:none}
+.main-table tr:hover td{background:var(--surface2)}
+.alert-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+.alert-item:last-child{border-bottom:none}
+.alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.alert-info{flex:1;min-width:0}
+.alert-id{font-size:10px;font-family:monospace;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.alert-reason{font-size:10px;color:var(--muted)}
+.alert-dias{font-size:10px;font-weight:500;white-space:nowrap}
+.llegada-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-radius:6px;margin-bottom:4px;font-size:10px}
+.llegada-week{background:rgba(46,204,113,.1);border-left:3px solid #2ecc71}
+.llegada-month{background:rgba(79,142,247,.1);border-left:3px solid #4f8ef7}
+.llegada-id{font-family:monospace;color:var(--text)}
+.llegada-date{font-weight:500}
+.footer-row{display:flex;align-items:center;gap:10px;padding:10px 0 0;font-size:10px;color:var(--muted);border-top:0.5px solid var(--border);margin-top:8px}
+.prog-bar{flex:1;height:3px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;background:var(--accent)}
+.sep{height:1px;background:var(--border);margin:10px 0}
+.arch-label{font-size:10px;color:var(--muted);padding:6px 0 4px;font-weight:500}
+.empty{font-size:11px;color:var(--muted);padding:12px 0;text-align:center}
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div style="font-size:20px;font-weight:500;color:#e8eaf0">Control de importaciones</div>
+  <div style="font-size:12px;color:#7b82a0">Interamsa</div>
+  <div class="loader-spinner"></div>
+  <p id="loader-msg">Iniciando sesión...</p>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <h1>📦 Control de importaciones</h1>
+    <div class="topbar-right">
+      <span class="user-badge" id="user-name">—</span>
+      <span class="last-update" id="last-update">—</span>
+      <button class="refresh-btn" onclick="loadData()">↻ Actualizar</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-ico" style="color:var(--accent)">◉</div>
+      <div class="kpi-val" style="color:var(--accent)" id="k-open">—</div>
+      <div class="kpi-lbl">Líneas activas (O)</div>
+      <div class="kpi-sub" id="k-open-s">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="color:var(--success)">✓</div>
+      <div class="kpi-val" style="color:var(--success)" id="k-closed">—</div>
+      <div class="kpi-lbl">Líneas cerradas (C)</div>
+      <div class="kpi-sub" id="k-closed-s">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="color:var(--danger)">🔔</div>
+      <div class="kpi-val" style="color:var(--danger)" id="k-alert">—</div>
+      <div class="kpi-lbl">Alertas operativas</div>
+      <div class="kpi-sub" style="color:var(--danger)">sin comentario ni IMP</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="color:var(--muted)">📦</div>
+      <div class="kpi-val" id="k-imp">—</div>
+      <div class="kpi-lbl">IMPs activos</div>
+      <div class="kpi-sub" id="k-imp-s">—</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('imp')">📦 Por IMP</button>
+    <button class="tab" onclick="setTab('llegadas')">📅 Llegadas</button>
+    <button class="tab" onclick="setTab('alertas')" id="tab-alertas-btn">🔔 Alertas</button>
+    <button class="tab" onclick="setTab('lineas')">📋 Todas las líneas</button>
+  </div>
+
+  <!-- TAB IMP -->
+  <div id="panel-imp" class="panel active">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">📊 Distribución activas</div>
+        <div id="dist-bars"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔧 Estado fábrica</div>
+        <div id="sfab-bars"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 IMPs — clic para ver OCIs</div>
+      <div class="tgl-group">
+        <button class="tgl active" onclick="setImpFiltro('activos',this)">Activos</button>
+        <button class="tgl" onclick="setImpFiltro('cerrados',this)">Cerrados</button>
+        <button class="tgl" onclick="setImpFiltro('todos',this)">Todos</button>
+      </div>
+      <div id="imp-list"></div>
+    </div>
+  </div>
+
+  <!-- TAB LLEGADAS -->
+  <div id="panel-llegadas" class="panel">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title" style="color:var(--success)">📅 Ingresan esta semana</div>
+        <div id="llegada-week"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--accent)">📅 Ingresan este mes</div>
+        <div id="llegada-month"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Todas con fecha programada</div>
+      <div style="overflow-x:auto">
+        <table class="main-table">
+          <thead><tr>
+            <th>IMP</th><th>id_linea</th><th>Tipo</th>
+            <th>F. llegada puerto</th><th>F. estimada ingreso</th>
+            <th>Estado</th><th>Comentario</th>
+          </tr></thead>
+          <tbody id="tbody-llegadas"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB ALERTAS -->
+  <div id="panel-alertas" class="panel">
+    <div class="card">
+      <div class="card-title" style="color:var(--danger)">🔔 Sin comentario ni IMP — abiertas sin gestión</div>
+      <div id="alert-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:var(--warning)">⏰ Abiertas sin fecha de llegada</div>
+      <div id="alert-nodate"></div>
+    </div>
+    <div class="two-col">
+      <div class="kpi" style="background:var(--surface);border:0.5px solid var(--border)">
+        <div class="kpi-val" style="color:var(--danger)" id="ka1">—</div>
+        <div class="kpi-lbl">Sin gestión</div>
+      </div>
+      <div class="kpi" style="background:var(--surface);border:0.5px solid var(--border)">
+        <div class="kpi-val" style="color:var(--warning)" id="ka2">—</div>
+        <div class="kpi-lbl">Sin fecha llegada</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB LINEAS -->
+  <div id="panel-lineas" class="panel">
+    <div class="card">
+      <div class="card-title">📋 Detalle completo</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <select id="f-st" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)">
+          <option value="">O + C</option><option value="O">Abiertas</option><option value="C">Cerradas</option>
+        </select>
+        <select id="f-tp" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)">
+          <option value="">Stock + Proyecto</option><option value="Stock">Stock</option><option value="Proyecto">Proyecto</option>
+        </select>
+        <select id="f-im" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)">
+          <option value="">Todos los IMP</option>
+        </select>
+        <select id="f-sf" onchange="renderLineas()" style="font-size:11px;padding:4px 6px;border-radius:var(--radius);background:var(--surface2);color:var(--text);border:0.5px solid var(--border)">
+          <option value="">Todos los estados</option>
+        </select>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="main-table">
+          <thead><tr>
+            <th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Tipo</th>
+            <th>Estado</th><th>Fábrica</th><th>IMP</th>
+            <th>F. llegada</th><th>Alerta</th><th>Comentario</th>
+          </tr></thead>
+          <tbody id="tbody-lineas"></tbody>
+        </table>
+      </div>
+      <div class="footer-row">
+        <span id="l-count">—</span>
+        <div class="prog-bar"><div class="prog-fill" id="l-prog" style="width:0%"></div></div>
+        <span id="l-pct">—</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '8fff6f5f-15cb-426c-af0f-0be068c3429f';
+const TENANT_ID = '4611f723-f5a5-423b-88ae-0921781561ff';
+const SITE_URL  = 'https://interamsa.sharepoint.com/sites/Automatizacin';
+const LIST_NAME = 'IMPORTACIONES_MASTERgpt';
+
+const msalConfig = {
+  auth: {
+    clientId: CLIENT_ID,
+    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+    redirectUri: window.location.href.split('?')[0]
+  },
+  cache: { cacheLocation: 'sessionStorage' }
+};
+
+const msalInstance = new msal.PublicClientApplication(msalConfig);
+const scopes = ['https://interamsa.sharepoint.com/AllSites.Read'];
+
+let DATA = [];
+let impFiltro = 'activos';
+const HOY = new Date();
+
+function dDiff(d){ if(!d) return null; return Math.floor((HOY - new Date(d)) / 86400000); }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function fDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+
+function getTipo(prioridad){
+  if(!prioridad) return 'Proyecto';
+  return prioridad.toUpperCase().includes('STOCK') ? 'Stock' : 'Proyecto';
+}
+
+function getFechaEstimada(fechaLlegada){
+  if(!fechaLlegada) return null;
+  return addDays(new Date(fechaLlegada), 7);
+}
+
+function inWeek(d){ if(!d) return false; const dt=new Date(d); const diff=Math.floor((dt-HOY)/86400000); return diff>=-1&&diff<=7; }
+function inMonth(d){ if(!d) return false; const dt=new Date(d); return dt.getFullYear()===HOY.getFullYear()&&dt.getMonth()===HOY.getMonth()&&dt>=HOY; }
+
+function impEstado(imp){
+  const lines = DATA.filter(r => r.IMP === imp);
+  return lines.every(r => r.line_status === 'C') ? 'cerrado' : 'activo';
+}
+
+function sfabPill(s){
+  if(!s) return '<span class="pill p-pend">—</span>';
+  if(s.toLowerCase().includes('tr')) return `<span class="pill p-transit">${s}</span>`;
+  if(s.toLowerCase().includes('prod')) return `<span class="pill p-prod">${s}</span>`;
+  return `<span class="pill p-pend">${s}</span>`;
+}
+function tipoPill(t){ return t==='Stock'?'<span class="pill p-stock">Stock</span>':'<span class="pill p-proj">Proyecto</span>'; }
+function stPill(s){ return s==='O'?'<span class="pill p-open">Abierta</span>':'<span class="pill p-closed">Cerrada</span>'; }
+function alertPill(r){
+  if(r.line_status==='O'&&!r.comentario&&!r.IMP) return '<span class="pill p-alert">Sin gestión</span>';
+  return '';
+}
+
+async function login(){
+  try {
+    await msalInstance.initialize();
+    const accounts = msalInstance.getAllAccounts();
+    if(accounts.length > 0){
+      msalInstance.setActiveAccount(accounts[0]);
+      document.getElementById('user-name').textContent = accounts[0].name || accounts[0].username;
+      return true;
+    }
+    const result = await msalInstance.loginPopup({ scopes });
+    msalInstance.setActiveAccount(result.account);
+    document.getElementById('user-name').textContent = result.account.name || result.account.username;
+    return true;
+  } catch(e){
+    console.error(e);
+    return false;
+  }
+}
+
+async function getToken(){
+  const account = msalInstance.getActiveAccount();
+  const result = await msalInstance.acquireTokenSilent({ scopes, account });
+  return result.accessToken;
+}
+
+async function fetchAll(){
+  const token = await getToken();
+  let items = [], skip = 0, more = true;
+  const fields = 'id_linea,nro_oci,codigo_sap,descripcion,proveedor,cantidad,precio_total,fecha_oci,line_status,status_fabrica,prioridad,comentario,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,fecha_actualizacion_correo';
+  while(more){
+    const url = `${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$select=${fields}&$top=500&$skip=${skip}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json;odata=nometadata' }});
+    const data = await res.json();
+    if(data.value && data.value.length > 0){ items = items.concat(data.value); skip += 500; }
+    else more = false;
+  }
+  return items;
+}
+
+async function loadData(){
+  document.getElementById('loader-msg').textContent = 'Cargando datos...';
+  try {
+    const raw = await fetchAll();
+    DATA = raw.map(r => ({
+      id_linea: r.id_linea || '',
+      nro_oci: r.nro_oci || '',
+      codigo_sap: r.codigo_sap || '',
+      descripcion: r.descripcion || '',
+      proveedor: r.proveedor || '',
+      cantidad: r.cantidad || 0,
+      precio_total: r.precio_total || 0,
+      fecha_oci: r.fecha_oci || null,
+      line_status: r.line_status || '',
+      status_fabrica: r.status_fabrica || '',
+      prioridad: r.prioridad || '',
+      comentario: r.comentario || '',
+      IMP: r.IMP || '',
+      fecha_embarque: r.fecha_embarque || null,
+      fecha_llegada: r.fecha_llegada || null,
+      ingreso_interamsa: r.ingreso_interamsa || null,
+      fecha_actualizacion: r.fecha_actualizacion_correo || null,
+      Tipo: getTipo(r.prioridad),
+      FechaEstimadaIngreso: r.fecha_llegada ? getFechaEstimada(r.fecha_llegada) : null
+    }));
+    document.getElementById('last-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-PE');
+    render();
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  } catch(e){
+    console.error(e);
+    document.getElementById('loader-msg').textContent = 'Error al cargar datos. Intenta de nuevo.';
+  }
+}
+
+function render(){
+  initKpis();
+  renderDist();
+  renderImpList();
+  renderLlegadas();
+  renderAlertas();
+  initFilters();
+  renderLineas();
+}
+
+function initKpis(){
+  const open = DATA.filter(r => r.line_status === 'O');
+  const closed = DATA.filter(r => r.line_status === 'C');
+  const alerts = DATA.filter(r => r.line_status === 'O' && !r.comentario && !r.IMP);
+  const allImps = [...new Set(DATA.filter(r => r.IMP).map(r => r.IMP))];
+  const impsActivos = allImps.filter(i => impEstado(i) === 'activo');
+
+  document.getElementById('k-open').textContent = open.length;
+  document.getElementById('k-open-s').textContent = `${[...new Set(open.map(r => r.nro_oci))].length} OCIs distintas`;
+  document.getElementById('k-closed').textContent = closed.length;
+  document.getElementById('k-closed-s').textContent = `${Math.round(closed.length/DATA.length*100)}% del total`;
+  document.getElementById('k-alert').textContent = alerts.length;
+  document.getElementById('k-imp').textContent = impsActivos.length;
+  document.getElementById('k-imp-s').textContent = `${allImps.length - impsActivos.length} cerrados en historial`;
+  document.getElementById('tab-alertas-btn').textContent = `🔔 Alertas ${alerts.length > 0 ? '('+alerts.length+')' : ''}`;
+  document.getElementById('ka1').textContent = alerts.length;
+  document.getElementById('ka2').textContent = DATA.filter(r => r.line_status === 'O' && !r.fecha_llegada).length;
+}
+
+function renderDist(){
+  const open = DATA.filter(r => r.line_status === 'O');
+  const stock = open.filter(r => r.Tipo === 'Stock').length;
+  const proj = open.filter(r => r.Tipo === 'Proyecto').length;
+  const tot = stock + proj || 1;
+  document.getElementById('dist-bars').innerHTML = `
+    <div class="bar-row"><span class="bar-lbl">Stock</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(stock/tot*100)}%;background:#f39c12"></div></div><span class="bar-cnt">${stock}</span></div>
+    <div class="bar-row"><span class="bar-lbl">Proyecto / empresa</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(proj/tot*100)}%;background:#4f8ef7"></div></div><span class="bar-cnt">${proj}</span></div>
+    <div class="sep"></div>
+    <div class="bar-row"><span class="bar-lbl">Sin IMP asignado</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(open.filter(r=>!r.IMP).length/tot*100)}%;background:#e74c3c"></div></div><span class="bar-cnt" style="color:#e74c3c">${open.filter(r=>!r.IMP).length}</span></div>`;
+
+  const sfabs = ['Tránsito','En producción','Pendiente','pendiente','Cerrado'];
+  const sfabCounts = {};
+  open.forEach(r => { if(r.status_fabrica) sfabCounts[r.status_fabrica] = (sfabCounts[r.status_fabrica]||0)+1; });
+  const sfabHtml = Object.entries(sfabCounts).slice(0,5).map(([s,n]) => {
+    const col = s.toLowerCase().includes('tr') ? '#1abc9c' : s.toLowerCase().includes('prod') ? '#9b59b6' : '#f39c12';
+    return `<div class="bar-row"><span class="bar-lbl">${s}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/open.length*100)||0}%;background:${col}"></div></div><span class="bar-cnt">${n}</span></div>`;
+  }).join('') + `<div class="bar-row"><span class="bar-lbl">Sin estado</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(open.filter(r=>!r.status_fabrica).length/open.length*100)||0}%;background:#2e3248"></div></div><span class="bar-cnt" style="color:#7b82a0">${open.filter(r=>!r.status_fabrica).length}</span></div>`;
+  document.getElementById('sfab-bars').innerHTML = sfabHtml;
+}
+
+function renderImpList(){
+  const allImps = [...new Set(DATA.filter(r => r.IMP).map(r => r.IMP))].sort((a,b) => b.localeCompare(a));
+  const activos = allImps.filter(i => impEstado(i) === 'activo');
+  const cerrados = allImps.filter(i => impEstado(i) === 'cerrado');
+  const sinImp = DATA.filter(r => r.line_status === 'O' && !r.IMP);
+  let filtered = impFiltro === 'activos' ? activos : impFiltro === 'cerrados' ? cerrados : allImps;
+
+  function impBlock(imp, isCerrado){
+    const lines = DATA.filter(r => r.IMP === imp);
+    const openL = lines.filter(r => r.line_status === 'O').length;
+    const closedL = lines.filter(r => r.line_status === 'C').length;
+    const pct = lines.length ? Math.round(closedL/lines.length*100) : 0;
+    const tipos = [...new Set(lines.map(r => r.Tipo))];
+    const hasAlert = lines.some(r => r.line_status === 'O' && !r.comentario);
+    const safeId = imp.replace(/[^a-zA-Z0-9]/g,'_');
+    return `<div class="imp-row">
+      <div class="imp-hdr" onclick="toggleImp('${safeId}')">
+        <span class="chevron" id="chev-${safeId}">▶</span>
+        <span class="imp-name" style="${isCerrado?'opacity:.6':''}">${imp}</span>
+        <div class="imp-meta">
+          <span class="count-badge">${lines.length} líneas</span>
+          ${isCerrado?'<span class="pill p-closed">Cerrado</span>':'<span class="pill p-open">Activo</span>'}
+          ${tipos.map(t=>tipoPill(t)).join('')}
+          ${hasAlert&&!isCerrado?'<span class="pill p-alert">Alerta</span>':''}
+          <div class="prog-mini"><div class="prog-mini-fill" style="width:${pct}%;background:${isCerrado?'#2ecc71':'#4f8ef7'}"></div></div>
+          <span style="font-size:10px;color:#7b82a0">${closedL}/${lines.length} cerradas</span>
+        </div>
+      </div>
+      <div class="imp-body" id="body-${safeId}">
+        <table class="imp-sub-table">
+          <thead><tr><th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Tipo</th><th>Estado</th><th>Fábrica</th><th>F. llegada</th><th>Comentario</th></tr></thead>
+          <tbody>${lines.map(r=>`<tr>
+            <td style="font-family:monospace">${r.id_linea}</td>
+            <td>${r.nro_oci}</td><td>${r.proveedor}</td>
+            <td>${tipoPill(r.Tipo)}</td>
+            <td>${stPill(r.line_status)}</td>
+            <td>${sfabPill(r.status_fabrica)}</td>
+            <td style="font-size:10px">${fDate(r.fecha_llegada)}</td>
+            <td style="color:#7b82a0">${r.comentario||'—'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  let html = '';
+  if(impFiltro === 'todos' && activos.length){
+    html += `<div class="arch-label">◉ Activos (${activos.length})</div>`;
+    html += activos.map(i => impBlock(i, false)).join('');
+    if(cerrados.length){
+      html += `<div class="arch-label" style="margin-top:10px">🗂 Cerrados / historial (${cerrados.length})</div>`;
+      html += cerrados.map(i => impBlock(i, true)).join('');
+    }
+  } else {
+    html += filtered.map(i => impBlock(i, impEstado(i)==='cerrado')).join('');
+  }
+
+  if(impFiltro === 'activos' && sinImp.length){
+    const safeId = '_sin_imp';
+    html += `<div class="imp-row" style="margin-top:4px">
+      <div class="imp-hdr" onclick="toggleImp('${safeId}')">
+        <span class="chevron" id="chev-${safeId}">▶</span>
+        <span class="imp-name" style="color:#e74c3c">Sin IMP</span>
+        <div class="imp-meta">
+          <span class="count-badge">${sinImp.length} líneas</span>
+          <span class="pill p-alert">Pendiente asignación</span>
+        </div>
+      </div>
+      <div class="imp-body" id="body-${safeId}">
+        <table class="imp-sub-table">
+          <thead><tr><th>id_linea</th><th>OCI</th><th>Tipo</th><th>Fábrica</th><th>Comentario</th></tr></thead>
+          <tbody>${sinImp.map(r=>`<tr>
+            <td style="font-family:monospace">${r.id_linea}</td>
+            <td>${r.nro_oci}</td>
+            <td>${tipoPill(r.Tipo)}</td>
+            <td>${sfabPill(r.status_fabrica)}</td>
+            <td style="color:#7b82a0">${r.comentario||'—'}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  if(!filtered.length && !sinImp.length) html = '<div class="empty">Sin registros para este filtro</div>';
+  document.getElementById('imp-list').innerHTML = html;
+}
+
+function toggleImp(id){
+  const body = document.getElementById('body-'+id);
+  const chev = document.getElementById('chev-'+id);
+  if(body){ body.classList.toggle('open'); chev.classList.toggle('open'); if(chev.classList.contains('open')) chev.textContent='▼'; else chev.textContent='▶'; }
+}
+
+function setImpFiltro(f, el){
+  impFiltro = f;
+  document.querySelectorAll('.tgl').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderImpList();
+}
+
+function renderLlegadas(){
+  const conFecha = DATA.filter(r => r.fecha_llegada && !r.ingreso_interamsa).sort((a,b) => new Date(a.fecha_llegada)-new Date(b.fecha_llegada));
+  const week = conFecha.filter(r => r.FechaEstimadaIngreso && inWeek(r.FechaEstimadaIngreso));
+  const month = conFecha.filter(r => r.FechaEstimadaIngreso && inMonth(r.FechaEstimadaIngreso) && !inWeek(r.FechaEstimadaIngreso));
+
+  document.getElementById('llegada-week').innerHTML = week.length
+    ? week.map(r=>`<div class="llegada-item llegada-week"><span class="llegada-id">${r.IMP||r.id_linea}</span><span class="llegada-date" style="color:#2ecc71">${fDate(r.FechaEstimadaIngreso)}</span></div>`).join('')
+    : '<div class="empty">Sin ingresos esta semana</div>';
+
+  document.getElementById('llegada-month').innerHTML = month.length
+    ? month.map(r=>`<div class="llegada-item llegada-month"><span class="llegada-id">${r.IMP||r.id_linea}</span><span class="llegada-date" style="color:#4f8ef7">${fDate(r.FechaEstimadaIngreso)}</span></div>`).join('')
+    : '<div class="empty">Sin ingresos adicionales este mes</div>';
+
+  document.getElementById('tbody-llegadas').innerHTML = conFecha.map(r=>`<tr>
+    <td style="color:#4f8ef7">${r.IMP||'—'}</td>
+    <td style="font-family:monospace;font-size:9px">${r.id_linea}</td>
+    <td>${tipoPill(r.Tipo)}</td>
+    <td>${fDate(r.fecha_llegada)}</td>
+    <td style="font-weight:500">${fDate(r.FechaEstimadaIngreso)}</td>
+    <td>${sfabPill(r.status_fabrica)}</td>
+    <td style="color:#7b82a0">${r.comentario||'—'}</td>
+  </tr>`).join('');
+}
+
+function renderAlertas(){
+  const sinGestion = DATA.filter(r => r.line_status==='O' && !r.comentario && !r.IMP).sort((a,b) => dDiff(b.fecha_actualizacion)-dDiff(a.fecha_actualizacion));
+  const sinFecha = DATA.filter(r => r.line_status==='O' && !r.fecha_llegada);
+
+  document.getElementById('alert-list').innerHTML = sinGestion.length
+    ? sinGestion.map(r => {
+        const d = dDiff(r.fecha_actualizacion);
+        const col = d>=10?'#e74c3c':'#f39c12';
+        return `<div class="alert-item">
+          <div class="alert-dot" style="background:${col}"></div>
+          <div class="alert-info">
+            <div class="alert-id">${r.id_linea}</div>
+            <div class="alert-reason">OCI ${r.nro_oci} · ${tipoPill(r.Tipo)} · sin comentario ni IMP</div>
+          </div>
+          <span class="alert-dias" style="color:${col}">${d!==null?d+'d':'—'}</span>
+        </div>`;
+      }).join('')
+    : '<div class="empty">Sin alertas activas</div>';
+
+  document.getElementById('alert-nodate').innerHTML = sinFecha.length
+    ? sinFecha.map(r=>`<div class="alert-item">
+        <div class="alert-dot" style="background:#f39c12"></div>
+        <div class="alert-info">
+          <div class="alert-id">${r.id_linea}</div>
+          <div class="alert-reason">OCI ${r.nro_oci} · ${r.IMP||'sin IMP'}</div>
+        </div>
+        <span class="pill p-nodate">Sin fecha</span>
+      </div>`).join('')
+    : '<div class="empty">Todas tienen fecha asignada</div>';
+}
+
+function initFilters(){
+  const imps = [...new Set(DATA.filter(r=>r.IMP).map(r=>r.IMP))].sort();
+  document.getElementById('f-im').innerHTML = '<option value="">Todos los IMP</option>' + imps.map(i=>`<option>${i}</option>`).join('');
+  const sfabs = [...new Set(DATA.filter(r=>r.status_fabrica).map(r=>r.status_fabrica))];
+  document.getElementById('f-sf').innerHTML = '<option value="">Todos los estados</option>' + sfabs.map(s=>`<option>${s}</option>`).join('');
+}
+
+function renderLineas(){
+  const fs = document.getElementById('f-st').value;
+  const ft = document.getElementById('f-tp').value;
+  const fi = document.getElementById('f-im').value;
+  const ff = document.getElementById('f-sf').value;
+  const rows = DATA.filter(r =>
+    (!fs||r.line_status===fs) &&
+    (!ft||r.Tipo===ft) &&
+    (!fi||r.IMP===fi) &&
+    (!ff||r.status_fabrica===ff)
+  );
+  document.getElementById('tbody-lineas').innerHTML = rows.map(r=>`<tr>
+    <td style="font-family:monospace;font-size:9px">${r.id_linea}</td>
+    <td>${r.nro_oci}</td><td>${r.proveedor}</td>
+    <td>${tipoPill(r.Tipo)}</td>
+    <td>${stPill(r.line_status)}</td>
+    <td>${sfabPill(r.status_fabrica)}</td>
+    <td style="color:#4f8ef7;font-size:10px">${r.IMP||'—'}</td>
+    <td style="font-size:10px">${fDate(r.fecha_llegada)}</td>
+    <td>${alertPill(r)}</td>
+    <td style="color:#7b82a0">${r.comentario||'—'}</td>
+  </tr>`).join('');
+  const cl = DATA.filter(r=>r.line_status==='C').length;
+  const pct = Math.round(cl/DATA.length*100);
+  document.getElementById('l-count').textContent = `${rows.length} líneas`;
+  document.getElementById('l-prog').style.width = pct+'%';
+  document.getElementById('l-pct').textContent = `${pct}% cerradas`;
+}
+
+function setTab(t){
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('panel-'+t).classList.add('active');
+}
+
+(async function init(){
+  const ok = await login();
+  if(ok) await loadData();
+  else {
+    document.getElementById('loader-msg').textContent = '';
+    document.getElementById('loader').innerHTML += '<button class="login-btn" onclick="location.reload()">Iniciar sesión</button>';
+  }
+})();
+</script>
+</body>
+</html>
