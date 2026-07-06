@@ -347,7 +347,7 @@ function mapData(){
     Tipo:tipo(r.prioridad),
     fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null
   }));
-  DATA=curYear==='todos'?all:all.filter(r=>!r.foci||new Date(r.foci).getFullYear()===parseInt(curYear));
+  DATA=curYear==='todos'?all:all.filter(r=>!r.foci||new Date(r.foci).getFullYear()===parseInt(curYear)||r.st==='O');
 }
 function applyYear(){curYear=document.getElementById('year-sel').value;mapData();render();}
 function render(){initKpis();renderNewOcis();renderLogistic();renderDist();renderImpList();renderLlegadas();renderAlertas();initFilters();renderLineas();renderNotifs();}
