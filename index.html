@@ -247,21 +247,18 @@ async function loadData(){
     const token=await getToken();
     if(!token)return;
     setStatus('Conectando a SharePoint...');
-    let items=[],skip=0,more=true;
-    while(more){
-      const url=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=500&$skip=${skip}`;
-      setDetail(`Cargando desde registro ${skip}...`);
-      const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json;odata=nometadata'}});
-      if(!res.ok){
-        const txt=await res.text();
-        setStatus('Error '+res.status);
-        setDetail(txt.substring(0,200));
-        return;
-      }
-      const data=await res.json();
-      if(data.value&&data.value.length>0){items=items.concat(data.value);skip+=500;}
-      else more=false;
+    let items=[];
+    const url=`${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=5000&$select=id_linea,nro_oci,codigo_sap,descripcion,proveedor,cantidad,precio_total,fecha_oci,line_status,status_fabrica,prioridad,comentario,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,fecha_actualizacion_correo`;
+    setDetail('Cargando registros...');
+    const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`,Accept:'application/json;odata=nometadata'}});
+    if(!res.ok){
+      const txt=await res.text();
+      setStatus('Error '+res.status);
+      setDetail(txt.substring(0,200));
+      return;
     }
+    const data=await res.json();
+    items=data.value||[];
     setDetail(`${items.length} registros cargados`);
     DATA=items.map(r=>({
       id_linea:r.id_linea||'',nro_oci:r.nro_oci||'',codigo_sap:r.codigo_sap||'',
