@@ -351,9 +351,9 @@ async function getToken(){
 async function fetchAll(){
   const token = await getToken();
   let items = [], skip = 0, more = true;
-  const fields = 'id_linea,nro_oci,codigo_sap,descripcion,proveedor,cantidad,precio_total,fecha_oci,line_status,status_fabrica,prioridad,comentario,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,fecha_actualizacion_correo';
+  
   while(more){
-    const url = `${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$select=${fields}&$top=500&$skip=${skip}`;
+    const url = `${SITE_URL}/_api/web/lists/getbytitle('${LIST_NAME}')/items?$top=500&$skip=${skip}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json;odata=nometadata' }});
     const data = await res.json();
     if(data.value && data.value.length > 0){ items = items.concat(data.value); skip += 500; }
