@@ -358,20 +358,23 @@ function diasHasta(fEst){
 
 function renderTimeline(lines){
   const r=lines[0];
-  const fIngCalc=r.fll?addD(new Date(r.fll),8):null;
+  const confirmado=!!r.ing;                 // ingreso_interamsa tiene valor = confirmado de verdad
+  const fechaFinal=confirmado?r.ing:r.fEst;  // fecha a mostrar en el último paso
+  const vencido=!confirmado&&r.fEst&&dd(r.fEst)>0; // fecha estimada ya pasó y nadie confirmó
   const steps=[
     {l:"OCI",d:r.foci,ok:!!r.foci},
     {l:"Embarque",d:r.femb,ok:!!r.femb},
     {l:"Llegada",d:r.fll,ok:!!r.fll},
-    {l:"Est. ingreso",d:r.fEst,ok:!!r.fEst&&dd(r.fEst)<=0,sub:true},
-    {l:"Ing. calc.",d:fIngCalc,ok:!!fIngCalc&&dd(fIngCalc)<=0}
+    {l:confirmado?"Ingreso":"Est. ingreso",d:fechaFinal,ok:confirmado,warn:vencido,sub:!confirmado}
   ];
   return'<div class="tl-wrap">'+steps.map((s,i)=>{
-    const c=s.ok?"#059669":!s.d?"#9ca3af":"#1565c0";
-    const bg=s.ok?"#d1fae5":!s.d?"#f3f4f6":"#dbeafe";
-    const ico=s.ok?"✓":!s.d?"○":"◎";
-    const line=i<4?'<div class="tl-line" style="background:'+( s.ok?"#059669":"#e5e7eb")+'"></div>':"";
-    return'<div class="tl-step"><div class="tl-dot" style="background:'+bg+';color:'+c+';border:1.5px solid '+c+'">'+ico+'</div><div class="tl-lbl">'+s.l+'</div><div class="tl-date">'+( s.d?fd(s.d):"—")+'</div>'+(s.sub&&s.d?'<div style="font-size:8px;text-align:center;margin-top:2px;font-weight:600">'+diasHasta(s.d)+'</div>':'')+'</div>'+line;
+    let c,bg,ico;
+    if(s.ok){c="#059669";bg="#d1fae5";ico="✓";}
+    else if(s.warn){c="#dc2626";bg="#fee2e2";ico="!";}
+    else if(!s.d){c="#9ca3af";bg="#f3f4f6";ico="○";}
+    else{c="#1565c0";bg="#dbeafe";ico="◎";}
+    const line=i<steps.length-1?'<div class="tl-line" style="background:'+( s.ok?"#059669":"#e5e7eb")+'"></div>':"";
+    return'<div class="tl-step"><div class="tl-dot" style="background:'+bg+';color:'+c+';border:1.5px solid '+c+'">'+ico+'</div><div class="tl-lbl">'+s.l+'</div><div class="tl-date">'+( s.d?fd(s.d):"—")+'</div>'+(s.sub&&s.d?'<div style="font-size:8px;text-align:center;margin-top:2px;font-weight:600;color:'+(s.warn?"#dc2626":"var(--mu)")+'">'+(s.warn?"vencido, sin confirmar":diasHasta(s.d))+'</div>':'')+'</div>'+line;
   }).join("")+'</div>';
 }
 
