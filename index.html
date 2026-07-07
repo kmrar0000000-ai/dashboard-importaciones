@@ -363,7 +363,7 @@ function renderTimeline(lines){
     {l:"OCI",d:r.foci,ok:!!r.foci},
     {l:"Embarque",d:r.femb,ok:!!r.femb},
     {l:"Llegada",d:r.fll,ok:!!r.fll},
-    {l:"Est. ingreso",d:r.fEst,ok:!!r.fEst&&dd(r.fEst)<=0},
+    {l:"Est. ingreso",d:r.fEst,ok:!!r.fEst&&dd(r.fEst)<=0,sub:true},
     {l:"Ing. calc.",d:fIngCalc,ok:!!fIngCalc&&dd(fIngCalc)<=0}
   ];
   return'<div class="tl-wrap">'+steps.map((s,i)=>{
@@ -371,7 +371,7 @@ function renderTimeline(lines){
     const bg=s.ok?"#d1fae5":!s.d?"#f3f4f6":"#dbeafe";
     const ico=s.ok?"✓":!s.d?"○":"◎";
     const line=i<4?'<div class="tl-line" style="background:'+( s.ok?"#059669":"#e5e7eb")+'"></div>':"";
-    return'<div class="tl-step"><div class="tl-dot" style="background:'+bg+';color:'+c+';border:1.5px solid '+c+'">'+ico+'</div><div class="tl-lbl">'+s.l+'</div><div class="tl-date">'+( s.d?fd(s.d):"—")+'</div></div>'+line;
+    return'<div class="tl-step"><div class="tl-dot" style="background:'+bg+';color:'+c+';border:1.5px solid '+c+'">'+ico+'</div><div class="tl-lbl">'+s.l+'</div><div class="tl-date">'+( s.d?fd(s.d):"—")+'</div>'+(s.sub&&s.d?'<div style="font-size:8px;text-align:center;margin-top:2px;font-weight:600">'+diasHasta(s.d)+'</div>':'')+'</div>'+line;
   }).join("")+'</div>';
 }
 
