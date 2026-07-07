@@ -358,12 +358,13 @@ function diasHasta(fEst){
 
 function renderTimeline(lines){
   const r=lines[0];
+  const fIngCalc=r.fll?addD(new Date(r.fll),8):null;
   const steps=[
     {l:"OCI",d:r.foci,ok:!!r.foci},
     {l:"Embarque",d:r.femb,ok:!!r.femb},
     {l:"Llegada",d:r.fll,ok:!!r.fll},
-    {l:"Estimado",d:r.fEst,ok:!!r.fEst&&dd(r.fEst)<=0},
-    {l:"Ingreso",d:r.ing,ok:!!r.ing}
+    {l:"Est. ingreso",d:r.fEst,ok:!!r.fEst&&dd(r.fEst)<=0},
+    {l:"Ing. calc.",d:fIngCalc,ok:!!fIngCalc&&dd(fIngCalc)<=0}
   ];
   return'<div class="tl-wrap">'+steps.map((s,i)=>{
     const c=s.ok?"#059669":!s.d?"#9ca3af":"#1565c0";
@@ -477,7 +478,8 @@ function mapData(){
     sync:r.ultima_sincronizacion_sap||null,
     cprod:String(r.codigo_producto||""),
     Tipo:tipo(r.prioridad),
-    fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null
+    fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null,
+    fIngCalc:r.fecha_llegada?addD(new Date(r.fecha_llegada),8):null
   }));
   DATA=curYear==="todos"?all:all.filter(r=>r.st==="O"||!r.foci||new Date(r.foci).getFullYear()===parseInt(curYear));
 }
