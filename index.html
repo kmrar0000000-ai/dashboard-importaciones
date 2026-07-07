@@ -393,7 +393,7 @@ async function getToken(){
   catch{await msalApp.acquireTokenRedirect({scopes:SCOPES});return null;}
 }
 
-function (() => {
+(() => {
     const cached=loadCache();
     if(cached){RAW=cached.data;mapData();document.getElementById('loader').style.display='none';document.getElementById('app').style.display='block';showCacheBanner(cached.time);render();}
   })(){
