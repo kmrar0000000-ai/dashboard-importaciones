@@ -329,13 +329,13 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
   </div>
   <div id="panel-proveedores" class="panel">
     <div class="card">
-      <div class="card-title">Mapa de proveedores — tamaño = líneas, color = salud</div>
+      <div class="card-title">Análisis por proveedor</div>
       <div class="tgl-grp">
         <button class="tgl active" onclick="setProvTgl('activos',this)">Activas</button>
         <button class="tgl" onclick="setProvTgl('cerrados',this)">Cerradas</button>
         <button class="tgl" onclick="setProvTgl('todos',this)">Todas</button>
       </div>
-      <div id="prov-treemap"></div>
+      <div id="prov-analysis"></div>
     </div>
     <div class="card">
       <div class="card-title">Origen de proveedores → Callao (ilustrativo, no es tracking en vivo)</div>
@@ -761,36 +761,10 @@ function renderAlertas(){
   document.getElementById("alert-more").textContent=sg.length>6?"Ver todas ("+sg.length+") ↗":"";
   document.getElementById("alert-nodate").innerHTML=sf.slice(0,5).map(r=>'<div class="alert-item"><div class="alert-dot" style="background:var(--wa)"></div><div class="alert-info"><div class="alert-id">'+r.id+'</div><div class="alert-reason">OCI '+r.oci+' · '+(r.IMP||"sin IMP")+' · '+sfPill(r.sfab)+'</div></div><span class="pill p-pend">Sin fecha</span></div>').join("")||'<div class="empty">Todas tienen fecha asignada</div>';
 }
-function sliceDice(items,x,y,w,h,horiz){
-  if(!items.length)return;
-  if(items.length===1){items[0].rect={x,y,w,h};return;}
-  const total=items.reduce((s,i)=>s+i.value,0)||1;
-  let acc=0,splitIdx=1;
-  for(let i=0;i<items.length;i++){acc+=items[i].value;if(acc>=total/2){splitIdx=i+1;break;}}
-  splitIdx=Math.max(1,Math.min(items.length-1,splitIdx));
-  const left=items.slice(0,splitIdx),right=items.slice(splitIdx);
-  const leftTotal=left.reduce((s,i)=>s+i.value,0),frac=leftTotal/total;
-  if(horiz){const wL=w*frac;sliceDice(left,x,y,wL,h,false);sliceDice(right,x+wL,y,w-wL,h,false);}
-  else{const hL=h*frac;sliceDice(left,x,y,w,hL,true);sliceDice(right,x,y+hL,w,h-hL,true);}
-}
-function svgTreemap(items,width,height){
-  width=width||600;height=height||200;
-  if(!items.length)return'<div class="empty">Sin datos para este filtro</div>';
-  const data=items.map(i=>({...i}));
-  sliceDice(data,0,0,width,height,true);
-  const tiles=data.map(d=>{
-    const r=d.rect;if(!r||r.w<=0||r.h<=0)return"";
-    const showLabel=r.w>46&&r.h>28;
-    return'<g class="tmap-tile" onclick="'+d.onclick+'"><rect x="'+r.x+'" y="'+r.y+'" width="'+r.w+'" height="'+r.h+'" fill="'+d.color+'"><title>'+d.label+': '+d.value+' línea(s)</title></rect>'+
-      (showLabel?'<text x="'+(r.x+6)+'" y="'+(r.y+15)+'" font-size="10" font-weight="700" fill="white">'+(d.label.length>18?d.label.slice(0,17)+"…":d.label)+'</text><text x="'+(r.x+6)+'" y="'+(r.y+r.h-7)+'" font-size="9" font-weight="600" fill="white" opacity="0.9">'+d.value+' líneas</text>':'')+
-      '</g>';
-  }).join("");
-  return'<svg viewBox="0 0 '+width+' '+height+'" width="100%" height="'+height+'" preserveAspectRatio="none">'+tiles+'</svg>';
-}
 function setProvTgl(f,el){provFiltro=f;document.querySelectorAll("#panel-proveedores .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderProveedores();}
 function svgProvMap(provNames,width,height){
   width=width||280;height=height||360;
-  // Contorno esquemático de Sudamérica (simplificado, solo referencial — no es cartografía precisa)
+  // Contorno de Sudamérica (simplificado a partir de puntos costeros reales — referencial, no cartografía de precisión)
   const lonMin=-82,lonMax=-33,latMin=-57,latMax=13;
   const px=lon=>(lon-lonMin)/(lonMax-lonMin)*width;
   const py=lat=>(latMax-lat)/(latMax-latMin)*height;
@@ -811,7 +785,7 @@ function svgProvMap(provNames,width,height){
       '<text x="'+(ox+7)+'" y="'+(oy+3)+'" font-size="9" font-weight="700" fill="var(--tx)">'+g.city+'</text>';
   });
   document.getElementById("prov-map-note").textContent=missing.length?"Sin ubicación registrada para: "+missing.join(", ")+" (agrégalas en PROV_GEO en el código).":"";
-  return{svg:'<svg viewBox="0 0 '+width+' '+height+'" width="100%" height="'+height+'"><path d="'+path+'" fill="var(--s0)" stroke="var(--bd2)" stroke-width="1.5"/>'+routes+markers+'</svg>',found};
+  return{svg:'<svg viewBox="0 0 '+width+' '+height+'" width="'+width+'" height="'+height+'" style="max-width:100%"><path d="'+path+'" fill="var(--s0)" stroke="var(--bd2)" stroke-width="1.5"/>'+routes+markers+'</svg>',found};
 }
 function renderProveedores(){
   const base=provFiltro==="activos"?DATA.filter(r=>r.st==="O"):provFiltro==="cerrados"?DATA.filter(r=>r.st==="C"):DATA;
@@ -820,16 +794,21 @@ function renderProveedores(){
   const pm={};
   base.forEach(r=>{if(!r.prov)return;if(!pm[r.prov])pm[r.prov]={n:0,sg:0,sf:0,v:0,lines:[]};pm[r.prov].n++;pm[r.prov].lines.push(r);if(r.st==="O"&&!r.com&&!r.IMP)pm[r.prov].sg++;if(r.st==="O"&&!r.fll)pm[r.prov].sf++;if(r.st==="O"&&r.fEst&&dd(r.fEst)>0)pm[r.prov].v++;});
   const sorted=Object.entries(pm).sort((a,b)=>b[1].n-a[1].n);
-  if(!sorted.length){document.getElementById("prov-treemap").innerHTML='<div class="empty">Sin datos para este filtro</div>';document.getElementById("prov-list").innerHTML='<div class="empty">Sin líneas</div>';return;}
-  const tmapItems=sorted.map(([prov,s])=>{
-    const hl=s.sg>0||s.v>0?"#dc2626":s.sf>s.n*0.5?"#d97706":"#059669";
-    const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
-    return{label:prov,value:s.n,color:hl,onclick:"toggleEl('"+sid+"')"};
-  });
-  const tmapW=document.getElementById("prov-treemap").clientWidth||600;
-  document.getElementById("prov-treemap").innerHTML=svgTreemap(tmapItems,tmapW,Math.min(260,Math.max(140,sorted.length*22)));
-  const mapW=document.getElementById("prov-map").clientWidth||280;
-  document.getElementById("prov-map").innerHTML=svgProvMap(sorted.map(([prov])=>prov),mapW,340).svg;
+  if(!sorted.length){document.getElementById("prov-analysis").innerHTML='<div class="empty">Sin datos para este filtro</div>';document.getElementById("prov-list").innerHTML='<div class="empty">Sin líneas</div>';return;}
+  const totalProv=sorted.length,totalLineas=sorted.reduce((s,[,x])=>s+x.n,0);
+  const avgLineas=totalProv?Math.round(totalLineas/totalProv*10)/10:0;
+  const top=sorted[0],riesgo=sorted.filter(([,x])=>x.sg>0||x.v>0);
+  const sinFechaTot=sorted.reduce((s,[,x])=>s+x.sf,0),pctSinFecha=totalLineas?Math.round(sinFechaTot/totalLineas*100):0;
+  const statCard=(label,val,color)=>'<div style="background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;text-align:center"><div style="font-size:18px;font-weight:800;color:'+color+'">'+val+'</div><div style="font-size:9px;color:var(--mu);font-weight:600;text-transform:uppercase;margin-top:2px">'+label+'</div></div>';
+  let html='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px">'+
+    statCard("Proveedores",totalProv,"var(--ac)")+statCard("Líneas totales",totalLineas,"var(--tx)")+
+    statCard("Promedio / proveedor",avgLineas,"var(--pu)")+statCard("Sin fecha llegada",pctSinFecha+"%","var(--wa)")+'</div>';
+  html+='<div style="font-size:11px;color:var(--tx);margin-bottom:8px">📦 Mayor volumen: <b>'+top[0]+'</b> ('+top[1].n+' líneas)</div>';
+  html+=riesgo.length?'<div style="font-size:10px;color:var(--er);font-weight:700;margin-bottom:5px">⚠ '+riesgo.length+' proveedor(es) con alertas:</div><div style="display:flex;gap:6px;flex-wrap:wrap">'+riesgo.map(([p])=>'<span class="pill p-alert">'+p+'</span>').join("")+'</div>':'<div style="font-size:10px;color:var(--ok);font-weight:700">✓ Ningún proveedor con alertas activas</div>';
+  document.getElementById("prov-analysis").innerHTML=html;
+  const mapW=Math.min(document.getElementById("prov-map").clientWidth||300,300);
+  const mapH=Math.round(mapW*(70/49)); // proporción lat/lon real del contorno (70° lat x 49° lon)
+  document.getElementById("prov-map").innerHTML='<div style="display:flex;justify-content:center">'+svgProvMap(sorted.map(([prov])=>prov),mapW,mapH).svg+'</div>';
   document.getElementById("prov-list").innerHTML=sorted.map(([prov,s])=>{
     const hl=s.sg>0||s.v>0?"r":s.sf>s.n*0.5?"y":"g";
     const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
