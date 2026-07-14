@@ -340,6 +340,7 @@ const impSt=imp=>{const l=DATA.filter(r=>r.IMP===imp);return l.length&&l.every(r
 function sfPill(s){
   if(!s)return'<span class="pill p-pend">—</span>';
   const sl2=s.toLowerCase();
+  if(sl2.includes("vencido"))return'<span class="pill p-alert">'+s+'</span>';
   if(sl2.includes("tr"))return'<span class="pill p-transit">'+s+'</span>';
   if(sl2.includes("prod"))return'<span class="pill p-prod">'+s+'</span>';
   if(sl2.includes("embar"))return'<span class="pill p-emb">'+s+'</span>';
@@ -547,9 +548,11 @@ function renderNotifs(){
 function renderLogistic(){
   const defs=[
     {k:"pendiente",l:"Pendiente",c:"#d97706"},
+    {k:"listo",l:"Listo (espera IMP)",c:"#d97706"},
     {k:"en produc",l:"En producción",c:"#7c3aed"},
     {k:"embar",l:"Embarcado",c:"#1565c0"},
     {k:"transito|tránsito",l:"Tránsito",c:"#0891b2"},
+    {k:"vencido",l:"Vencidos",c:"#dc2626"},
     {k:"recep",l:"Recepcionado",c:"#059669"}
   ];
   const cer=DATA.filter(r=>r.st==="C").length;
