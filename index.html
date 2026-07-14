@@ -188,6 +188,12 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
 .prov-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bd)}
 .prov-row:last-child{border-bottom:none}
 .prov-name{font-size:11px;font-weight:600;min-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prov-hdr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s}
+.prov-hdr:hover{background:var(--ac3)}
+.prov-body{display:none;padding:4px 0 10px}
+.prov-body.open{display:block;animation:fadeIn .2s ease}
+.tmap-tile{stroke:white;stroke-width:2;cursor:pointer;transition:opacity .15s}
+.tmap-tile:hover{opacity:.82}
 .mtbl{width:100%;border-collapse:collapse;font-size:10px}
 .mtbl th{padding:7px 9px;text-align:left;color:var(--mu);border-bottom:2px solid var(--bd);font-size:9px;white-space:nowrap;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--s2)}
 .mtbl td{padding:7px 9px;border-bottom:1px solid var(--bd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;color:var(--tx)}
@@ -322,7 +328,16 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
     </div>
   </div>
   <div id="panel-proveedores" class="panel">
-    <div class="card"><div class="card-title">Resumen por proveedor — líneas activas</div><div id="prov-list"></div></div>
+    <div class="card">
+      <div class="card-title">Mapa de proveedores — tamaño = líneas, color = salud</div>
+      <div class="tgl-grp">
+        <button class="tgl active" onclick="setProvTgl('activos',this)">Activas</button>
+        <button class="tgl" onclick="setProvTgl('cerrados',this)">Cerradas</button>
+        <button class="tgl" onclick="setProvTgl('todos',this)">Todas</button>
+      </div>
+      <div id="prov-treemap"></div>
+    </div>
+    <div class="card"><div class="card-title" id="prov-list-title">Resumen por proveedor — líneas activas</div><div id="prov-list"></div></div>
   </div>
     </main>
   </div>
@@ -336,7 +351,7 @@ const SCOPES=["https://interamsa.sharepoint.com/AllSites.Read"];
 const FIELDS="id_linea,nro_oci,codigo_sap,descripcion,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto";
 const msalCfg={auth:{clientId:CID,authority:"https://login.microsoftonline.com/"+TID,redirectUri:window.location.origin+"/dashboard-importaciones/"},cache:{cacheLocation:"localStorage"}};
 const msalApp=new msal.PublicClientApplication(msalCfg);
-let RAW=[],DATA=[],impFiltro="activos",curYear="2026",lastAlertIds=new Set(),firstLoad=true,searchTerm="",fltSfabKey=null,fltSfabLabel="",fltNoIMP=false,fltLlegadaBucket=null;
+let RAW=[],DATA=[],impFiltro="activos",curYear="2026",lastAlertIds=new Set(),firstLoad=true,searchTerm="",fltSfabKey=null,fltSfabLabel="",fltNoIMP=false,fltLlegadaBucket=null,provFiltro="activos";
 const HOY=new Date();
 const sl=m=>document.getElementById("lmsg").textContent=m;
 const sd=m=>document.getElementById("ldet").textContent=m;
@@ -733,15 +748,59 @@ function renderAlertas(){
   document.getElementById("alert-more").textContent=sg.length>6?"Ver todas ("+sg.length+") ↗":"";
   document.getElementById("alert-nodate").innerHTML=sf.slice(0,5).map(r=>'<div class="alert-item"><div class="alert-dot" style="background:var(--wa)"></div><div class="alert-info"><div class="alert-id">'+r.id+'</div><div class="alert-reason">OCI '+r.oci+' · '+(r.IMP||"sin IMP")+' · '+sfPill(r.sfab)+'</div></div><span class="pill p-pend">Sin fecha</span></div>').join("")||'<div class="empty">Todas tienen fecha asignada</div>';
 }
+function sliceDice(items,x,y,w,h,horiz){
+  if(!items.length)return;
+  if(items.length===1){items[0].rect={x,y,w,h};return;}
+  const total=items.reduce((s,i)=>s+i.value,0)||1;
+  let acc=0,splitIdx=1;
+  for(let i=0;i<items.length;i++){acc+=items[i].value;if(acc>=total/2){splitIdx=i+1;break;}}
+  splitIdx=Math.max(1,Math.min(items.length-1,splitIdx));
+  const left=items.slice(0,splitIdx),right=items.slice(splitIdx);
+  const leftTotal=left.reduce((s,i)=>s+i.value,0),frac=leftTotal/total;
+  if(horiz){const wL=w*frac;sliceDice(left,x,y,wL,h,false);sliceDice(right,x+wL,y,w-wL,h,false);}
+  else{const hL=h*frac;sliceDice(left,x,y,w,hL,true);sliceDice(right,x,y+hL,w,h-hL,true);}
+}
+function svgTreemap(items,width,height){
+  width=width||600;height=height||200;
+  if(!items.length)return'<div class="empty">Sin datos para este filtro</div>';
+  const data=items.map(i=>({...i}));
+  sliceDice(data,0,0,width,height,true);
+  const tiles=data.map(d=>{
+    const r=d.rect;if(!r||r.w<=0||r.h<=0)return"";
+    const showLabel=r.w>46&&r.h>28;
+    return'<g class="tmap-tile" onclick="'+d.onclick+'"><rect x="'+r.x+'" y="'+r.y+'" width="'+r.w+'" height="'+r.h+'" fill="'+d.color+'"><title>'+d.label+': '+d.value+' línea(s)</title></rect>'+
+      (showLabel?'<text x="'+(r.x+6)+'" y="'+(r.y+15)+'" font-size="10" font-weight="700" fill="white">'+(d.label.length>18?d.label.slice(0,17)+"…":d.label)+'</text><text x="'+(r.x+6)+'" y="'+(r.y+r.h-7)+'" font-size="9" font-weight="600" fill="white" opacity="0.9">'+d.value+' líneas</text>':'')+
+      '</g>';
+  }).join("");
+  return'<svg viewBox="0 0 '+width+' '+height+'" width="100%" height="'+height+'" preserveAspectRatio="none">'+tiles+'</svg>';
+}
+function setProvTgl(f,el){provFiltro=f;document.querySelectorAll("#panel-proveedores .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderProveedores();}
 function renderProveedores(){
-  const op=DATA.filter(r=>r.st==="O");
+  const base=provFiltro==="activos"?DATA.filter(r=>r.st==="O"):provFiltro==="cerrados"?DATA.filter(r=>r.st==="C"):DATA;
+  const titleTxt=provFiltro==="activos"?"líneas activas":provFiltro==="cerrados"?"líneas cerradas":"todas las líneas";
+  document.getElementById("prov-list-title").textContent="Resumen por proveedor — "+titleTxt;
   const pm={};
-  op.forEach(r=>{if(!r.prov)return;if(!pm[r.prov])pm[r.prov]={n:0,sg:0,sf:0,v:0};pm[r.prov].n++;if(!r.com&&!r.IMP)pm[r.prov].sg++;if(!r.fll)pm[r.prov].sf++;if(r.fEst&&dd(r.fEst)>0)pm[r.prov].v++;});
+  base.forEach(r=>{if(!r.prov)return;if(!pm[r.prov])pm[r.prov]={n:0,sg:0,sf:0,v:0,lines:[]};pm[r.prov].n++;pm[r.prov].lines.push(r);if(r.st==="O"&&!r.com&&!r.IMP)pm[r.prov].sg++;if(r.st==="O"&&!r.fll)pm[r.prov].sf++;if(r.st==="O"&&r.fEst&&dd(r.fEst)>0)pm[r.prov].v++;});
   const sorted=Object.entries(pm).sort((a,b)=>b[1].n-a[1].n);
-  if(!sorted.length){document.getElementById("prov-list").innerHTML='<div class="empty">Sin líneas activas</div>';return;}
+  if(!sorted.length){document.getElementById("prov-treemap").innerHTML='<div class="empty">Sin datos para este filtro</div>';document.getElementById("prov-list").innerHTML='<div class="empty">Sin líneas</div>';return;}
+  const tmapItems=sorted.map(([prov,s])=>{
+    const hl=s.sg>0||s.v>0?"#dc2626":s.sf>s.n*0.5?"#d97706":"#059669";
+    const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
+    return{label:prov,value:s.n,color:hl,onclick:"toggleEl('"+sid+"')"};
+  });
+  document.getElementById("prov-treemap").innerHTML=svgTreemap(tmapItems,600,Math.min(260,Math.max(140,sorted.length*22)));
   document.getElementById("prov-list").innerHTML=sorted.map(([prov,s])=>{
     const hl=s.sg>0||s.v>0?"r":s.sf>s.n*0.5?"y":"g";
-    return'<div class="prov-row"><span class="health h-'+hl+'">●</span><span class="prov-name">'+prov+'</span><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap;align-items:center"><span class="cbadge">'+s.n+' líneas</span>'+(s.sg?'<span class="pill p-alert">'+s.sg+' sin gestión</span>':"")+(s.sf?'<span class="pill p-pend">'+s.sf+' sin fecha</span>':"")+(s.v?'<span class="pill p-alert">'+s.v+' vencidas</span>':"")+'</div></div>';
+    const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
+    return'<div class="prov-hdr" onclick="toggleEl(\''+sid+'\')">'+
+      '<span class="chev" id="c'+sid+'">▶</span>'+
+      '<span class="health h-'+hl+'">●</span><span class="prov-name">'+prov+'</span>'+
+      '<div style="display:flex;gap:6px;flex:1;flex-wrap:wrap;align-items:center"><span class="cbadge">'+s.n+' líneas</span>'+(s.sg?'<span class="pill p-alert">'+s.sg+' sin gestión</span>':"")+(s.sf?'<span class="pill p-pend">'+s.sf+' sin fecha</span>':"")+(s.v?'<span class="pill p-alert">'+s.v+' vencidas</span>':"")+'</div>'+
+      '</div>'+
+      '<div class="prov-body" id="'+sid+'">'+
+      '<table class="itbl"><thead><tr><th>id_linea</th><th>OCI</th><th>Descripción</th><th>Tipo</th><th>Estado</th><th>Fábrica</th><th>IMP</th><th>Comentario</th></tr></thead>'+
+      '<tbody>'+s.lines.map(r=>'<tr><td style="font-family:monospace">'+r.id+'</td><td>'+r.oci+'</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(r.desc||"—")+'</td><td>'+tpPill(r.Tipo)+'</td><td>'+stPill(r.st)+'</td><td>'+sfPill(r.sfab)+'</td><td style="color:var(--ac);font-weight:600">'+(r.IMP||"—")+'</td><td style="color:var(--mu)">'+(r.com||"—")+'</td></tr>').join("")+
+      '</tbody></table></div>';
   }).join("");
 }
 function initFilters(){
@@ -842,7 +901,7 @@ function toggleEl(id){
   const b=document.getElementById(id),c=document.getElementById("c"+id);
   if(b){
     const isOpen=b.classList.contains("open")||b.style.display==="block";
-    if(b.classList.contains("oci-body")||b.classList.contains("imp-body")||b.classList.contains("llegada-body")){b.classList.toggle("open");}
+    if(b.classList.contains("oci-body")||b.classList.contains("imp-body")||b.classList.contains("llegada-body")||b.classList.contains("prov-body")){b.classList.toggle("open");}
     else{b.style.display=isOpen?"none":"block";}
     if(c)c.textContent=(b.classList.contains("open")||b.style.display==="block")?"▼":"▶";
   }
@@ -882,15 +941,15 @@ function clearCrossFilter(){
 function goImpActivos(){
   impFiltro="activos";
   setTab("imp",document.querySelector(".sb-item"));
-  document.querySelectorAll(".tgl").forEach(t=>t.classList.remove("active"));
-  document.querySelector(".tgl").classList.add("active");
+  document.querySelectorAll("#panel-imp .tgl").forEach(t=>t.classList.remove("active"));
+  document.querySelector("#panel-imp .tgl").classList.add("active");
   renderImpList();
 }
 function filterLlegada(bucket){
   fltLlegadaBucket=fltLlegadaBucket===bucket?null:bucket;
   renderLlegadas();
 }
-function setTgl(f,el){impFiltro=f;document.querySelectorAll(".tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderImpList();}
+function setTgl(f,el){impFiltro=f;document.querySelectorAll("#panel-imp .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderImpList();}
 function toggleNotif(){document.getElementById("np").classList.toggle("open");}
 document.addEventListener("click",e=>{const nw=document.getElementById("nw");if(nw&&!nw.contains(e.target))document.getElementById("np").classList.remove("open");});
 init();
