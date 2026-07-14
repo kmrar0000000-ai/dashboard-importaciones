@@ -337,6 +337,11 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
       </div>
       <div id="prov-treemap"></div>
     </div>
+    <div class="card">
+      <div class="card-title">Origen de proveedores → Callao (ilustrativo, no es tracking en vivo)</div>
+      <div id="prov-map"></div>
+      <div id="prov-map-note" style="font-size:9px;color:var(--mu);margin-top:6px"></div>
+    </div>
     <div class="card"><div class="card-title" id="prov-list-title">Resumen por proveedor — líneas activas</div><div id="prov-list"></div></div>
   </div>
     </main>
@@ -349,6 +354,14 @@ const SITE="https://interamsa.sharepoint.com/sites/Automatizacin";
 const LIST="IMPORTACIONES_MASTERgpt";
 const SCOPES=["https://interamsa.sharepoint.com/AllSites.Read"];
 const FIELDS="id_linea,nro_oci,codigo_sap,descripcion,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto";
+// Catálogo manual de ubicaciones de proveedores para el mapa ilustrativo (Proveedores).
+// El nombre debe coincidir EXACTO con el campo "proovedor" en SharePoint.
+// Para agregar un proveedor nuevo: súmale una línea con su lat/lon aproximada y dirección.
+const PROV_GEO={
+  "LIGHTERA LATAM S.A.":{lat:-23.5015,lon:-47.4526,city:"Sorocaba, Brasil",addr:"Av. Pirelli, 100, Sorocaba, SP 18103-085"},
+  "LIGHTERA COLOMBIA S.A.S.":{lat:4.6768,lon:-74.0486,city:"Chapinero, Bogotá, Colombia",addr:"Cl. 93 15-40, Chapinero, Bogotá 110221"}
+};
+const CALLAO={lat:-12.0566,lon:-77.1181,city:"Callao, Perú (destino)"};
 const msalCfg={auth:{clientId:CID,authority:"https://login.microsoftonline.com/"+TID,redirectUri:window.location.origin+"/dashboard-importaciones/"},cache:{cacheLocation:"localStorage"}};
 const msalApp=new msal.PublicClientApplication(msalCfg);
 let RAW=[],DATA=[],impFiltro="activos",curYear="2026",lastAlertIds=new Set(),firstLoad=true,searchTerm="",fltSfabKey=null,fltSfabLabel="",fltNoIMP=false,fltLlegadaBucket=null,provFiltro="activos";
@@ -775,6 +788,31 @@ function svgTreemap(items,width,height){
   return'<svg viewBox="0 0 '+width+' '+height+'" width="100%" height="'+height+'" preserveAspectRatio="none">'+tiles+'</svg>';
 }
 function setProvTgl(f,el){provFiltro=f;document.querySelectorAll("#panel-proveedores .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderProveedores();}
+function svgProvMap(provNames,width,height){
+  width=width||280;height=height||360;
+  // Contorno esquemático de Sudamérica (simplificado, solo referencial — no es cartografía precisa)
+  const lonMin=-82,lonMax=-33,latMin=-57,latMax=13;
+  const px=lon=>(lon-lonMin)/(lonMax-lonMin)*width;
+  const py=lat=>(latMax-lat)/(latMax-latMin)*height;
+  const outline=[[-71,12],[-77,8],[-79,1],[-81,-6],[-77,-12],[-70,-18],[-70,-23],[-71,-33],[-73,-42],[-68,-55],[-65,-50],[-57,-38],[-48,-26],[-43,-23],[-38,-13],[-35,-6],[-44,0],[-51,4],[-60,8]];
+  const path="M"+outline.map(([lo,la])=>px(lo)+","+py(la)).join(" L")+" Z";
+  const dx=px(CALLAO.lon),dy=py(CALLAO.lat);
+  let markers='<circle cx="'+dx+'" cy="'+dy+'" r="5" fill="var(--ac)" stroke="white" stroke-width="1.5"><title>'+CALLAO.city+'</title></circle>'+
+    '<text x="'+(dx+7)+'" y="'+(dy+3)+'" font-size="9" font-weight="800" fill="var(--ac)">Callao</text>';
+  let routes="";
+  const found=[],missing=[];
+  provNames.forEach(prov=>{
+    const g=PROV_GEO[prov];
+    if(!g){missing.push(prov);return;}
+    found.push(prov);
+    const ox=px(g.lon),oy=py(g.lat);
+    routes+='<path d="M'+ox+','+oy+' Q'+((ox+dx)/2)+','+(Math.min(oy,dy)-20)+' '+dx+','+dy+'" fill="none" stroke="var(--ac2)" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.75"/>';
+    markers+='<circle cx="'+ox+'" cy="'+oy+'" r="5" fill="#dc2626" stroke="white" stroke-width="1.5"><title>'+prov+' — '+g.city+'\n'+g.addr+'</title></circle>'+
+      '<text x="'+(ox+7)+'" y="'+(oy+3)+'" font-size="9" font-weight="700" fill="var(--tx)">'+g.city+'</text>';
+  });
+  document.getElementById("prov-map-note").textContent=missing.length?"Sin ubicación registrada para: "+missing.join(", ")+" (agrégalas en PROV_GEO en el código).":"";
+  return{svg:'<svg viewBox="0 0 '+width+' '+height+'" width="100%" height="'+height+'"><path d="'+path+'" fill="var(--s0)" stroke="var(--bd2)" stroke-width="1.5"/>'+routes+markers+'</svg>',found};
+}
 function renderProveedores(){
   const base=provFiltro==="activos"?DATA.filter(r=>r.st==="O"):provFiltro==="cerrados"?DATA.filter(r=>r.st==="C"):DATA;
   const titleTxt=provFiltro==="activos"?"líneas activas":provFiltro==="cerrados"?"líneas cerradas":"todas las líneas";
@@ -790,6 +828,8 @@ function renderProveedores(){
   });
   const tmapW=document.getElementById("prov-treemap").clientWidth||600;
   document.getElementById("prov-treemap").innerHTML=svgTreemap(tmapItems,tmapW,Math.min(260,Math.max(140,sorted.length*22)));
+  const mapW=document.getElementById("prov-map").clientWidth||280;
+  document.getElementById("prov-map").innerHTML=svgProvMap(sorted.map(([prov])=>prov),mapW,340).svg;
   document.getElementById("prov-list").innerHTML=sorted.map(([prov,s])=>{
     const hl=s.sg>0||s.v>0?"r":s.sf>s.n*0.5?"y":"g";
     const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
