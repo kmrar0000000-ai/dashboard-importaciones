@@ -525,13 +525,15 @@ function renderNotifs(){
   document.getElementById("notif-list").innerHTML=html;
 }
 function renderLogistic(){
-  const defs=[
+const defs=[
     {k:"pendiente",l:"Pendiente",c:"#d97706"},
     {k:"en produc",l:"En producción",c:"#7c3aed"},
     {k:"embar",l:"Embarcado",c:"#1565c0"},
     {k:"transito|tránsito",l:"Tránsito",c:"#0891b2"},
-    {k:"recep",l:"Recepcionado",c:"#059669"}
-  ];
+    {k:"recep",l:"Recepcionado",c:"#059669"},
+    {k:"vencido",l:"Vencidos",c:"#dc2626"},
+    {k:"espera imp",l:"Listo (espera IMP)",c:"#d97706"}
+];
   const cer=DATA.filter(r=>r.st==="C").length;
   const all2=[...defs,{k:"cerrado",l:"Cerrado",c:"#475569"}];
   const counts=[...defs.map(d=>DATA.filter(r=>r.sfab&&new RegExp(d.k,"i").test(r.sfab)).length),cer];
