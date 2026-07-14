@@ -322,7 +322,7 @@ const TID="4611f723-f5a5-423b-88ae-0921781561ff";
 const SITE="https://interamsa.sharepoint.com/sites/Automatizacin";
 const LIST="IMPORTACIONES_MASTERgpt";
 const SCOPES=["https://interamsa.sharepoint.com/AllSites.Read"];
-const FIELDS="id_linea,nro_oci,codigo_sap,descripcion,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto,nro_booking,naviera,fecha_booking,nro_contenedor";
+const FIELDS="id_linea,nro_oci,codigo_sap,descripcion,proovedor,cantidad,cantidadparcial,precio_unitario,precio_total,fecha_oci,linestatus,status_fabrica,prioridad,comentario,fecha_actualizacion_correo,plazo_entrega,IMP,fecha_embarque,fecha_llegada,ingreso_interamsa,ultima_sincronizacion_sap,codigo_producto";
 const msalCfg={auth:{clientId:CID,authority:"https://login.microsoftonline.com/"+TID,redirectUri:window.location.origin+"/dashboard-importaciones/"},cache:{cacheLocation:"localStorage"}};
 const msalApp=new msal.PublicClientApplication(msalCfg);
 let RAW=[],DATA=[],impFiltro="activos",curYear="2026",lastAlertIds=new Set(),firstLoad=true,searchTerm="";
@@ -385,10 +385,8 @@ function renderTimeline(lines){
   const confirmado=!!r.ing;                 // ingreso_interamsa tiene valor = confirmado de verdad
   const fechaFinal=confirmado?r.ing:r.fEst;  // fecha a mostrar en el último paso
   const vencido=!confirmado&&r.fEst&&dd(r.fEst)>0; // fecha estimada ya pasó y nadie confirmó
-  const bookingVencido=!r.fbook&&!!r.femb; // ya embarcó pero no hay booking registrado
   const steps=[
     {l:"OCI",d:r.foci,ok:!!r.foci},
-    {l:"Booking",d:r.fbook,ok:!!r.fbook,warn:bookingVencido},
     {l:"Embarque",d:r.femb,ok:!!r.femb},
     {l:"Llegada",d:r.fll,ok:!!r.fll},
     {l:confirmado?"Ingreso":"Est. ingreso",d:fechaFinal,ok:confirmado,warn:vencido,sub:!confirmado}
@@ -400,9 +398,7 @@ function renderTimeline(lines){
     else if(!s.d){c="#9ca3af";bg="#f3f4f6";ico="○";}
     else{c="#1565c0";bg="#dbeafe";ico="◎";}
     const line=i<steps.length-1?'<div class="tl-line" style="background:'+( s.ok?"#059669":"#e5e7eb")+'"></div>':"";
-    const bookInfo=s.l==="Booking"&&(r.naviera||r.booking)?'<div style="font-size:8px;text-align:center;margin-top:2px;color:var(--mu)">'+( r.naviera||"—")+(r.booking?" · "+r.booking:"")+'</div>':'';
-    const bookWarn=s.l==="Booking"&&s.warn?'<div style="font-size:8px;text-align:center;margin-top:2px;font-weight:600;color:#dc2626">sin booking registrado</div>':'';
-    return'<div class="tl-step"><div class="tl-dot" style="background:'+bg+';color:'+c+';border:1.5px solid '+c+'">'+ico+'</div><div class="tl-lbl">'+s.l+'</div><div class="tl-date">'+( s.d?fd(s.d):"—")+'</div>'+(s.sub&&s.d?'<div style="font-size:8px;text-align:center;margin-top:2px;font-weight:600;color:'+(s.warn?"#dc2626":"var(--mu)")+'">'+(s.warn?"vencido, sin confirmar":diasHasta(s.d))+'</div>':'')+bookInfo+bookWarn+'</div>'+line;
+    return'<div class="tl-step"><div class="tl-dot" style="background:'+bg+';color:'+c+';border:1.5px solid '+c+'">'+ico+'</div><div class="tl-lbl">'+s.l+'</div><div class="tl-date">'+( s.d?fd(s.d):"—")+'</div>'+(s.sub&&s.d?'<div style="font-size:8px;text-align:center;margin-top:2px;font-weight:600;color:'+(s.warn?"#dc2626":"var(--mu)")+'">'+(s.warn?"vencido, sin confirmar":diasHasta(s.d))+'</div>':'')+'</div>'+line;
   }).join("")+'</div>';
 }
 
@@ -504,8 +500,6 @@ function mapData(){
     fupd:r.fecha_actualizacion_correo||null,
     sync:r.ultima_sincronizacion_sap||null,
     cprod:String(r.codigo_producto||""),
-    booking:r.nro_booking||"",naviera:r.naviera||"",
-    fbook:r.fecha_booking||null,cont:r.nro_contenedor||"",
     Tipo:tipo(r.prioridad),
     fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null,
     fIngCalc:r.fecha_llegada?addD(new Date(r.fecha_llegada),8):null
