@@ -788,7 +788,8 @@ function renderProveedores(){
     const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
     return{label:prov,value:s.n,color:hl,onclick:"toggleEl('"+sid+"')"};
   });
-  document.getElementById("prov-treemap").innerHTML=svgTreemap(tmapItems,600,Math.min(260,Math.max(140,sorted.length*22)));
+  const tmapW=document.getElementById("prov-treemap").clientWidth||600;
+  document.getElementById("prov-treemap").innerHTML=svgTreemap(tmapItems,tmapW,Math.min(260,Math.max(140,sorted.length*22)));
   document.getElementById("prov-list").innerHTML=sorted.map(([prov,s])=>{
     const hl=s.sg>0||s.v>0?"r":s.sf>s.n*0.5?"y":"g";
     const sid="p_"+prov.replace(/[^a-zA-Z0-9]/g,"_");
@@ -906,7 +907,7 @@ function toggleEl(id){
     if(c)c.textContent=(b.classList.contains("open")||b.style.display==="block")?"▼":"▶";
   }
 }
-function setTab(t,el){document.querySelectorAll(".sb-item").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));if(el)el.classList.add("active");document.getElementById("panel-"+t).classList.add("active");}
+function setTab(t,el){document.querySelectorAll(".sb-item").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));if(el)el.classList.add("active");document.getElementById("panel-"+t).classList.add("active");if(t==="proveedores")renderProveedores();}
 function resetCrossOnly(){fltSfabKey=null;fltSfabLabel="";fltNoIMP=false;}
 function filterByEstado(st){
   resetCrossOnly();
@@ -952,6 +953,11 @@ function filterLlegada(bucket){
 function setTgl(f,el){impFiltro=f;document.querySelectorAll("#panel-imp .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderImpList();}
 function toggleNotif(){document.getElementById("np").classList.toggle("open");}
 document.addEventListener("click",e=>{const nw=document.getElementById("nw");if(nw&&!nw.contains(e.target))document.getElementById("np").classList.remove("open");});
+let resizeT;
+window.addEventListener("resize",()=>{
+  clearTimeout(resizeT);
+  resizeT=setTimeout(()=>{if(document.getElementById("panel-proveedores").classList.contains("active"))renderProveedores();},200);
+});
 init();
 </script>
 </body>
