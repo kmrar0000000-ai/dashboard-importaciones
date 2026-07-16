@@ -196,6 +196,9 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
 .tmap-tile:hover{opacity:.82}
 .mtbl{width:100%;border-collapse:collapse;font-size:10px}
 .mtbl th{padding:7px 9px;text-align:left;color:var(--mu);border-bottom:2px solid var(--bd);font-size:9px;white-space:nowrap;font-weight:700;text-transform:uppercase;letter-spacing:.04em;background:var(--s2)}
+.th-sort{cursor:pointer;user-select:none}
+.th-sort:hover{color:var(--ac)}
+.th-sort.active{color:var(--ac)}
 .mtbl td{padding:7px 9px;border-bottom:1px solid var(--bd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;color:var(--tx)}
 .mtbl tr:last-child td{border-bottom:none}
 .mtbl tr:hover td{background:var(--ac3)}
@@ -347,15 +350,16 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
   </div>
   <div id="panel-plazos" class="panel">
     <div class="kpi-grid">
-      <div class="kpi" style="border-top:3px solid var(--pu)"><div class="kpi-lbl" style="color:var(--pu)">Con plazo asignado</div><div class="kpi-val" style="color:var(--pu)" id="pz1">—</div></div>
-      <div class="kpi" style="border-top:3px solid var(--er)"><div class="kpi-lbl" style="color:var(--er)">Vencidos</div><div class="kpi-val" style="color:var(--er)" id="pz2">—</div></div>
-      <div class="kpi" style="border-top:3px solid var(--wa)"><div class="kpi-lbl" style="color:var(--wa)">Urgentes (≤15d o sin embarcar)</div><div class="kpi-val" style="color:var(--wa)" id="pz3">—</div></div>
-      <div class="kpi" style="border-top:3px solid var(--ok)"><div class="kpi-lbl" style="color:var(--ok)">En margen</div><div class="kpi-val" style="color:var(--ok)" id="pz4">—</div></div>
+      <div class="kpi kpi-click" style="border-top:3px solid var(--pu)" onclick="setPlazoFilter('todos')"><div class="kpi-lbl" style="color:var(--pu)">Con plazo asignado</div><div class="kpi-val" style="color:var(--pu)" id="pz1">—</div></div>
+      <div class="kpi kpi-click" style="border-top:3px solid var(--er)" onclick="setPlazoFilter('vencido')"><div class="kpi-lbl" style="color:var(--er)">Vencidos</div><div class="kpi-val" style="color:var(--er)" id="pz2">—</div></div>
+      <div class="kpi kpi-click" style="border-top:3px solid var(--wa)" onclick="setPlazoFilter('urgente')"><div class="kpi-lbl" style="color:var(--wa)">Urgentes (≤15d o sin embarcar)</div><div class="kpi-val" style="color:var(--wa)" id="pz3">—</div></div>
+      <div class="kpi kpi-click" style="border-top:3px solid var(--ok)" onclick="setPlazoFilter('margen')"><div class="kpi-lbl" style="color:var(--ok)">En margen</div><div class="kpi-val" style="color:var(--ok)" id="pz4">—</div></div>
     </div>
     <div class="card" style="border-left:4px solid var(--er)">
-      <div class="card-title">Líneas con plazo de entrega — ordenadas por urgencia</div>
+      <div class="card-title">Líneas con plazo de entrega — clic en un encabezado para ordenar</div>
       <div style="font-size:9px;color:var(--mu);margin-bottom:8px">Solo se listan líneas abiertas que tienen <b>plazo_entrega</b> asignado (no todas las órdenes lo tienen). "Listo/reservado" cuenta como aún no embarcado.</div>
-      <div style="overflow-x:auto"><table class="mtbl"><thead><tr><th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Plazo entrega</th><th>Días restantes</th><th>Fábrica</th><th>IMP</th><th>Comentario</th></tr></thead><tbody id="tbody-plazo"></tbody></table></div>
+      <div id="plazo-filter-chip" style="margin-bottom:8px"></div>
+      <div style="overflow-x:auto"><table class="mtbl"><thead><tr id="thead-plazo"></tr></thead><tbody id="tbody-plazo"></tbody></table></div>
     </div>
   </div>
     </main>
@@ -378,7 +382,7 @@ const PROV_GEO={
 const CALLAO={lat:-12.0566,lon:-77.1181,city:"Callao, Perú (destino)"};
 const msalCfg={auth:{clientId:CID,authority:"https://login.microsoftonline.com/"+TID,redirectUri:window.location.origin+"/dashboard-importaciones/"},cache:{cacheLocation:"localStorage"}};
 const msalApp=new msal.PublicClientApplication(msalCfg);
-let RAW=[],DATA=[],impFiltro="activos",curYear="2026",lastAlertIds=new Set(),firstLoad=true,searchTerm="",fltSfabKey=null,fltSfabLabel="",fltNoIMP=false,fltLlegadaBucket=null,provFiltro="activos";
+let RAW=[],DATA=[],impFiltro="activos",curYear="2026",lastAlertIds=new Set(),firstLoad=true,searchTerm="",fltSfabKey=null,fltSfabLabel="",fltNoIMP=false,fltLlegadaBucket=null,provFiltro="activos",plazoFilter="todos",plazoSortKey="dias",plazoSortDir=1;
 const HOY=new Date();
 const sl=m=>document.getElementById("lmsg").textContent=m;
 const sd=m=>document.getElementById("ldet").textContent=m;
@@ -788,6 +792,26 @@ function plazoNivel(r){
   if(d<=30)return"proximo";
   return"ok";
 }
+const PLAZO_COLS=[
+  {key:"id",label:"id_linea"},{key:"oci",label:"OCI"},{key:"prov",label:"Proveedor"},
+  {key:"plazo",label:"Plazo entrega"},{key:"dias",label:"Días restantes"},
+  {key:"sfab",label:"Fábrica"},{key:"IMP",label:"IMP"},{key:"com",label:"Comentario"}
+];
+function setPlazoFilter(f){plazoFilter=plazoFilter===f?"todos":f;renderPlazos();}
+function setPlazoSort(key){if(plazoSortKey===key)plazoSortDir*=-1;else{plazoSortKey=key;plazoSortDir=1;}renderPlazos();}
+function plazoVal(x,key){
+  switch(key){
+    case"id":return x.r.id||"";
+    case"oci":return x.r.oci||"";
+    case"prov":return x.r.prov||"";
+    case"plazo":return new Date(x.r.plazo).getTime()||0;
+    case"dias":return x.d===null?9999:x.d;
+    case"sfab":return x.r.sfab||"";
+    case"IMP":return x.r.IMP||"";
+    case"com":return x.r.com||"";
+    default:return x.d;
+  }
+}
 function renderPlazos(){
   const conPlazo=DATA.filter(r=>r.st==="O"&&r.plazo);
   const niveles=conPlazo.map(r=>({r,n:plazoNivel(r),d:plazoDiasRestantes(r)}));
@@ -799,7 +823,19 @@ function renderPlazos(){
   document.getElementById("pz3").textContent=urgentes;
   document.getElementById("pz4").textContent=ok;
   document.getElementById("tab-plazo").innerHTML="⏰<span>Plazos críticos"+((vencidos+urgentes)?" ("+(vencidos+urgentes)+")":"")+"</span>";
-  const sorted=niveles.sort((a,b)=>(a.d===null?9999:a.d)-(b.d===null?9999:b.d));
+  const filtered=plazoFilter==="todos"?niveles:plazoFilter==="margen"?niveles.filter(x=>x.n==="proximo"||x.n==="ok"):niveles.filter(x=>x.n===plazoFilter);
+  const sorted=filtered.sort((a,b)=>{
+    const va=plazoVal(a,plazoSortKey),vb=plazoVal(b,plazoSortKey);
+    if(typeof va==="string")return va.localeCompare(vb)*plazoSortDir;
+    return(va-vb)*plazoSortDir;
+  });
+  const chipLabels={todos:"",vencido:"Vencidos",urgente:"Urgentes",margen:"En margen"};
+  document.getElementById("plazo-filter-chip").innerHTML=plazoFilter!=="todos"?'<span class="filter-chip">Filtro: '+chipLabels[plazoFilter]+' <button onclick="setPlazoFilter(\'todos\')">✕</button></span>':"";
+  document.getElementById("thead-plazo").innerHTML=PLAZO_COLS.map(c=>{
+    const active=plazoSortKey===c.key;
+    const arrow=active?(plazoSortDir===1?" ▲":" ▼"):"";
+    return'<th class="th-sort'+(active?" active":"")+'" onclick="setPlazoSort(\''+c.key+'\')">'+c.label+arrow+'</th>';
+  }).join("");
   const colorMap={vencido:"#dc2626",urgente:"#d97706",proximo:"#1565c0",ok:"#059669"};
   const labelMap={vencido:"Vencido",urgente:"Urgente",proximo:"Próximo",ok:"En margen"};
   document.getElementById("tbody-plazo").innerHTML=sorted.map(({r,n,d})=>{
@@ -810,7 +846,7 @@ function renderPlazos(){
       '<td><span class="pill" style="background:'+c+'22;color:'+c+'">'+labelMap[n]+' · '+diasTxt+'</span></td>'+
       '<td>'+sfPill(r.sfab)+'</td><td style="color:var(--ac);font-weight:600">'+(r.IMP||"—")+'</td>'+
       '<td style="color:var(--mu)">'+(r.com||"—")+'</td></tr>';
-  }).join("")||'<tr><td colspan="8" class="empty">Ninguna línea abierta tiene plazo_entrega asignado</td></tr>';
+  }).join("")||'<tr><td colspan="8" class="empty">Sin resultados para este filtro</td></tr>';
 }
 function setProvTgl(f,el){provFiltro=f;document.querySelectorAll("#panel-proveedores .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderProveedores();}
 function svgProvMap(provNames,width,height){
