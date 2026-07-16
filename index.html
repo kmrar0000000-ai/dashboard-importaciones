@@ -256,6 +256,7 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
         <button class="sb-item" onclick="setTab('alertas',this)" id="tab-al">🔔<span>Alertas</span></button>
         <button class="sb-item" id="sb-lineas" onclick="setTab('lineas',this)">📋<span>Todas las líneas</span></button>
         <button class="sb-item" onclick="setTab('proveedores',this)">🏭<span>Proveedores</span></button>
+        <button class="sb-item" onclick="setTab('plazos',this)" id="tab-plazo">⏰<span>Plazos críticos</span></button>
       </nav>
     </aside>
     <main class="main-content">
@@ -343,6 +344,19 @@ mark.hl{background:#bfdbfe;color:#1565c0;border-radius:2px;padding:0 1px}
       <div id="prov-map-note" style="font-size:9px;color:var(--mu);margin-top:6px"></div>
     </div>
     <div class="card"><div class="card-title" id="prov-list-title">Resumen por proveedor — líneas activas</div><div id="prov-list"></div></div>
+  </div>
+  <div id="panel-plazos" class="panel">
+    <div class="kpi-grid">
+      <div class="kpi" style="border-top:3px solid var(--pu)"><div class="kpi-lbl" style="color:var(--pu)">Con plazo asignado</div><div class="kpi-val" style="color:var(--pu)" id="pz1">—</div></div>
+      <div class="kpi" style="border-top:3px solid var(--er)"><div class="kpi-lbl" style="color:var(--er)">Vencidos</div><div class="kpi-val" style="color:var(--er)" id="pz2">—</div></div>
+      <div class="kpi" style="border-top:3px solid var(--wa)"><div class="kpi-lbl" style="color:var(--wa)">Urgentes (≤15d o sin embarcar)</div><div class="kpi-val" style="color:var(--wa)" id="pz3">—</div></div>
+      <div class="kpi" style="border-top:3px solid var(--ok)"><div class="kpi-lbl" style="color:var(--ok)">En margen</div><div class="kpi-val" style="color:var(--ok)" id="pz4">—</div></div>
+    </div>
+    <div class="card" style="border-left:4px solid var(--er)">
+      <div class="card-title">Líneas con plazo de entrega — ordenadas por urgencia</div>
+      <div style="font-size:9px;color:var(--mu);margin-bottom:8px">Solo se listan líneas abiertas que tienen <b>plazo_entrega</b> asignado (no todas las órdenes lo tienen). "Listo/reservado" cuenta como aún no embarcado.</div>
+      <div style="overflow-x:auto"><table class="mtbl"><thead><tr><th>id_linea</th><th>OCI</th><th>Proveedor</th><th>Plazo entrega</th><th>Días restantes</th><th>Fábrica</th><th>IMP</th><th>Comentario</th></tr></thead><tbody id="tbody-plazo"></tbody></table></div>
+    </div>
   </div>
     </main>
   </div>
@@ -542,12 +556,13 @@ function mapData(){
     cprod:String(r.codigo_producto||""),
     Tipo:tipo(r.prioridad),
     fEst:r.fecha_llegada&&!r.ingreso_interamsa?addD(new Date(r.fecha_llegada),7):null,
+    plazo:r.plazo_entrega||null,
     fIngCalc:r.fecha_llegada?addD(new Date(r.fecha_llegada),8):null
   }));
   DATA=curYear==="todos"?all:all.filter(r=>r.st==="O"||!r.foci||new Date(r.foci).getFullYear()===parseInt(curYear));
 }
 function applyYear(){curYear=document.getElementById("year-sel").value;mapData();render();}
-function render(){initKpis();renderNewOcis();renderLogistic();renderDist();renderImpList();renderLlegadas();renderAlertas();initFilters();renderLineas();renderProveedores();renderNotifs();}
+function render(){initKpis();renderNewOcis();renderLogistic();renderDist();renderImpList();renderLlegadas();renderAlertas();initFilters();renderLineas();renderProveedores();renderPlazos();renderNotifs();}
 
 function initKpis(){
   const op=DATA.filter(r=>r.st==="O"),cl=DATA.filter(r=>r.st==="C");
@@ -561,7 +576,7 @@ function initKpis(){
   document.getElementById("k3").textContent=al.length;
   document.getElementById("k4").textContent=iact.length;
   document.getElementById("k4s").textContent=(imps.length-iact.length)+" cerrados en historial";
-  document.getElementById("tab-al").textContent="🔔 Alertas"+(al.length?" ("+al.length+")":"");
+  document.getElementById("tab-al").innerHTML="🔔<span>Alertas"+(al.length?" ("+al.length+")":"")+"</span>";
   document.getElementById("ka1").textContent=al.length;
   document.getElementById("ka2").textContent=DATA.filter(r=>r.st==="O"&&!r.fll).length;
   document.getElementById("ndot").style.display=al.length?"block":"none";
@@ -760,6 +775,42 @@ function renderAlertas(){
   }).join("")||'<div class="empty">Sin alertas activas</div>';
   document.getElementById("alert-more").textContent=sg.length>6?"Ver todas ("+sg.length+") ↗":"";
   document.getElementById("alert-nodate").innerHTML=sf.slice(0,5).map(r=>'<div class="alert-item"><div class="alert-dot" style="background:var(--wa)"></div><div class="alert-info"><div class="alert-id">'+r.id+'</div><div class="alert-reason">OCI '+r.oci+' · '+(r.IMP||"sin IMP")+' · '+sfPill(r.sfab)+'</div></div><span class="pill p-pend">Sin fecha</span></div>').join("")||'<div class="empty">Todas tienen fecha asignada</div>';
+}
+function plazoDiasRestantes(r){
+  if(!r.plazo)return null;
+  return Math.ceil((new Date(r.plazo)-HOY)/86400000);
+}
+function plazoNivel(r){
+  const d=plazoDiasRestantes(r);
+  if(d===null)return null;
+  if(d<0)return"vencido";
+  if(!r.femb||d<=15)return"urgente"; // sin embarcar todavía, o quedan 15 días o menos
+  if(d<=30)return"proximo";
+  return"ok";
+}
+function renderPlazos(){
+  const conPlazo=DATA.filter(r=>r.st==="O"&&r.plazo);
+  const niveles=conPlazo.map(r=>({r,n:plazoNivel(r),d:plazoDiasRestantes(r)}));
+  const vencidos=niveles.filter(x=>x.n==="vencido").length;
+  const urgentes=niveles.filter(x=>x.n==="urgente").length;
+  const ok=niveles.filter(x=>x.n==="proximo"||x.n==="ok").length;
+  document.getElementById("pz1").textContent=conPlazo.length;
+  document.getElementById("pz2").textContent=vencidos;
+  document.getElementById("pz3").textContent=urgentes;
+  document.getElementById("pz4").textContent=ok;
+  document.getElementById("tab-plazo").innerHTML="⏰<span>Plazos críticos"+((vencidos+urgentes)?" ("+(vencidos+urgentes)+")":"")+"</span>";
+  const sorted=niveles.sort((a,b)=>(a.d===null?9999:a.d)-(b.d===null?9999:b.d));
+  const colorMap={vencido:"#dc2626",urgente:"#d97706",proximo:"#1565c0",ok:"#059669"};
+  const labelMap={vencido:"Vencido",urgente:"Urgente",proximo:"Próximo",ok:"En margen"};
+  document.getElementById("tbody-plazo").innerHTML=sorted.map(({r,n,d})=>{
+    const c=colorMap[n];
+    const diasTxt=d<0?"Venció hace "+Math.abs(d)+"d":d+"d restantes";
+    return'<tr><td style="font-family:monospace;font-size:9px">'+r.id+'</td><td>'+r.oci+'</td><td>'+r.prov+'</td>'+
+      '<td style="font-weight:700">'+fd(r.plazo)+'</td>'+
+      '<td><span class="pill" style="background:'+c+'22;color:'+c+'">'+labelMap[n]+' · '+diasTxt+'</span></td>'+
+      '<td>'+sfPill(r.sfab)+'</td><td style="color:var(--ac);font-weight:600">'+(r.IMP||"—")+'</td>'+
+      '<td style="color:var(--mu)">'+(r.com||"—")+'</td></tr>';
+  }).join("")||'<tr><td colspan="8" class="empty">Ninguna línea abierta tiene plazo_entrega asignado</td></tr>';
 }
 function setProvTgl(f,el){provFiltro=f;document.querySelectorAll("#panel-proveedores .tgl").forEach(t=>t.classList.remove("active"));el.classList.add("active");renderProveedores();}
 function svgProvMap(provNames,width,height){
