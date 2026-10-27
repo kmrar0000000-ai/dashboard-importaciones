@@ -1,0 +1,1 @@
+import{Aa as a,M as r}from"./chunk-KINISEJQ.js";var c=(()=>{class t{linea=a(null);abrir(e){this.linea.set(e)}cerrar(){this.linea.set(null)}static \u0275fac=function(i){return new(i||t)};static \u0275prov=r({token:t,factory:t.\u0275fac,providedIn:"root"})}return t})();export{c as a};
